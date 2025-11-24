@@ -1,0 +1,68 @@
+# Authentication Configuration Example
+# This example demonstrates how to configure JWT authentication for API endpoints
+
+database:
+  url: "postgresql://postgres:postgres@localhost:5432/pylight"
+
+swagger:
+  title: "Pylight API with Authentication"
+  version: "1.0.0"
+  description: "API with JWT authentication configured via YAML"
+
+# Global authentication provider configuration
+authentication:
+  # JWT authentication settings
+  jwt:
+    # Secret key for JWT token verification
+    # In production, use a strong, randomly generated secret key
+    secret_key: "your-secret-key-change-in-production"
+  
+  # OAuth2 authentication (alternative to JWT)
+  # Uncomment to use OAuth2 instead of JWT
+  # oauth2:
+  #   client_id: "your-oauth-client-id"
+  #   client_secret: "your-oauth-client-secret"
+  #   authorization_url: "https://oauth-provider.com/authorize"
+  #   token_url: "https://oauth-provider.com/token"
+
+tables:
+  # Products table with authentication required
+  - name: "products"
+    # Authentication configuration for this table
+    authentication:
+      # Require authentication for this table
+      required: true
+      # Roles that can access this table (optional, empty means any authenticated user)
+      roles: []
+    
+    # Permissions: specify which roles can use which HTTP methods
+    permissions:
+      # GET: any authenticated user
+      GET: []
+      # POST, PUT, DELETE: require admin role
+      POST: ["admin"]
+      PUT: ["admin"]
+      DELETE: ["admin"]
+    
+    features:
+      pagination:
+        enabled: true
+        default_page_size: 10
+      filtering:
+        enabled: true
+      sorting:
+        enabled: true
+
+  # Users table: public access (no authentication required)
+  - name: "users"
+    authentication:
+      # No authentication required for this table
+      required: false
+    
+    # Only GET and POST allowed (no PUT or DELETE)
+    methods: ["GET", "POST"]
+    
+    features:
+      pagination:
+        enabled: true
+

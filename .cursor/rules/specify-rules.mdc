@@ -1,0 +1,42 @@
+# pylight Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2025-11-21
+
+## Active Technologies
+- Python 3.11+ + Starlette, Uvicorn, SQLAlchemy, Strawberry GraphQL, PyJWT, python-jose, redis-py, PyYAML, Alembic, Click (001-pylight-framework)
+- SQLAlchemy-compatible databases (PostgreSQL, MySQL, SQLite) (001-pylight-framework)
+- PostgreSQL database (via Docker container at localhost:5432) (002-integration-examples)
+- Python 3.11+ + None (cleanup task, no new dependencies) (003-cleanup-repository)
+- N/A (file system operations only) (003-cleanup-repository)
+- Markdown (GitHub-flavored) + None (documentation only, no code dependencies) (004-framework-readme)
+- N/A (single README.md file) (004-framework-readme)
+- N/A (configuration only, no persistent storage) (006-yaml-table-config)
+- Bash shell scripting (POSIX-compliant), Python 3.11+ (for Pylight framework) (007-yaml-local-testing)
+- N/A (testing infrastructure only, no persistent storage) (007-yaml-local-testing)
+- PostgreSQL (via async SQLAlchemy) (008-fix-yaml-config)
+
+- Python 3.11+ + FastAPI, SQLAlchemy, Strawberry GraphQL, WebSockets, PyJWT, python-jose, redis-py, PyYAML, Alembic, Click (001-pylight-framework)
+
+## Project Structure
+
+```text
+src/
+tests/
+```
+
+## Commands
+
+cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLOGIES] pytest [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLOGIES] ruff check .
+
+## Code Style
+
+Python 3.11+: Follow standard conventions
+
+## Recent Changes
+- 008-fix-yaml-config: Added Python 3.11+
+- 007-yaml-local-testing: Added Bash shell scripting (POSIX-compliant), Python 3.11+ (for Pylight framework)
+- 006-yaml-table-config: Added Python 3.11+
+
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

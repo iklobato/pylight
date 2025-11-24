@@ -1,0 +1,18 @@
+database:
+  url: "sqlite:///app.db"
+
+swagger:
+  title: "My API"
+  version: "1.0.0"
+  description: "API generated with Pylight"
+
+auth:
+  jwt_secret: "your-secret-key-change-in-production"
+  oauth2_enabled: false
+
+cache:
+  redis_url: "redis://localhost:6379"
+
+cors:
+  allowed_origins: ["*"]
+

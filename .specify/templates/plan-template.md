@@ -31,7 +31,19 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Verify compliance with Pylight Constitution principles:
+
+- **Clean Code**: Solution is simple, clear, and avoids unnecessary complexity
+- **Layered Architecture**: Structure follows domain/application/infrastructure/presentation layers; domain does not depend on infrastructure
+- **Naming Conventions**: PascalCase for classes, camelCase for methods/variables, UPPER_SNAKE_CASE for constants
+- **Project Structure**: Uses only required directories (src/domain, src/application, src/infrastructure, src/presentation, src/shared if needed, tests, docs)
+- **Composition over Inheritance**: Prefers composition; inheritance only where justified
+- **Dependency Injection**: Used only where it meaningfully improves testability
+- **Error Handling**: Fail-fast approach, domain-specific errors, no magic values
+- **Testing**: Arrange-Act-Assert pattern, comprehensive coverage planned
+- **No Overengineering**: No unnecessary layers, wrappers, or abstractions
+
+If any principle is violated, document justification in Complexity Tracking section below.
 
 ## Project Structure
 
@@ -58,10 +70,11 @@ specs/[###-feature]/
 ```text
 # [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+├── domain/          # Business logic and entities
+├── application/     # Use cases and orchestration
+├── infrastructure/  # External adapters (databases, APIs, file systems)
+├── presentation/    # UI/API controllers
+└── shared/          # Only if truly required
 
 tests/
 ├── contract/
@@ -71,9 +84,10 @@ tests/
 # [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
 backend/
 ├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
+│   ├── domain/
+│   ├── application/
+│   ├── infrastructure/
+│   └── presentation/  # API controllers
 └── tests/
 
 frontend/

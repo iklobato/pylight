@@ -1,0 +1,2 @@
+"""GraphQL generation package."""
+

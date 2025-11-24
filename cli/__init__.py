@@ -1,0 +1,2 @@
+"""Pylight CLI package."""
+

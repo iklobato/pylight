@@ -1,0 +1,66 @@
+# Pylight
+
+A next-generation Python API framework that automatically generates REST endpoints, GraphQL schemas, WebSocket hooks, and CLI commands from data models.
+
+## Features
+
+- **Automatic Endpoint Generation**: Define models using class-based inheritance with SQLAlchemy, and get REST, GraphQL, WebSocket, and CLI endpoints automatically
+- **Async I/O**: Built on Starlette and Uvicorn for high-performance async operations
+- **Authentication**: Role-based JWT and OAuth2 authentication out of the box
+- **Caching**: Redis integration for efficient caching
+- **Built-in Features**: Pagination, filtering, and sorting for list endpoints
+- **Auto Documentation**: Swagger/OpenAPI and GraphiQL interfaces generated automatically
+- **Flexible Configuration**: YAML or class-based configuration at app and endpoint levels
+- **Database Reflection**: Automatically generate models from existing databases
+- **Extensible**: Plugin system and inheritance-based customization
+
+## Quick Start
+
+```bash
+# Install
+pip install pylight
+
+# Create a new project
+pylight init my-api
+cd my-api
+
+# Run the server
+python main.py
+```
+
+## Example
+
+```python
+from pylight import RestEndpoint, Column, Integer, String
+from sqlalchemy import DateTime
+
+class Product(RestEndpoint):
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100))
+    price = Column(Integer)
+
+from pylight import LightApi
+
+app = LightApi(database_url="sqlite:///app.db")
+app.register(Product)
+app.run(host="localhost", port=8000)
+```
+
+## Architecture
+
+Pylight follows a clean layered architecture:
+
+- **Domain**: Business logic and base entities
+- **Application**: Endpoint generation and orchestration
+- **Infrastructure**: Database, cache, auth, configuration
+- **Presentation**: REST, GraphQL, WebSocket handlers using Starlette
+
+## Requirements
+
+- Python 3.11+
+- SQLAlchemy-compatible database (PostgreSQL, MySQL, SQLite)
+
+## License
+
+MIT
+

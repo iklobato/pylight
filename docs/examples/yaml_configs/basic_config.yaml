@@ -1,0 +1,56 @@
+# Basic YAML Table Configuration Example
+# This example demonstrates the minimal configuration needed to expose database tables as REST API endpoints
+
+database:
+  # Database connection URL
+  # Format: postgresql://user:password@host:port/database
+  url: "postgresql://postgres:postgres@localhost:5432/pylight"
+
+swagger:
+  # API documentation title
+  title: "Pylight Test API"
+  # API version
+  version: "1.0.0"
+  # API description
+  description: "Basic API generated from database tables using YAML configuration"
+
+tables:
+  # Example: Products table
+  # This table will have all HTTP methods enabled (GET, POST, PUT, DELETE) by default
+  - name: "products"
+    # HTTP methods allowed for this table (optional, defaults to all methods)
+    # methods: ["GET", "POST", "PUT", "DELETE"]
+    
+    # Features configuration (all enabled by default)
+    features:
+      # Pagination: enabled by default, default page size 10, max 100
+      pagination:
+        enabled: true
+        default_page_size: 10
+        max_page_size: 100
+      
+      # Filtering: enabled by default
+      filtering:
+        enabled: true
+      
+      # Sorting: enabled by default
+      sorting:
+        enabled: true
+      
+      # GraphQL: enabled by default
+      graphql: true
+      
+      # WebSocket: enabled by default
+      websocket: true
+      
+      # Caching: enabled if Redis available
+      caching:
+        enabled: true
+
+  # Example: Users table
+  # Minimal configuration - uses all defaults
+  - name: "users"
+    # No methods specified = all methods enabled
+    # No authentication specified = public access
+    # All features enabled by default
+

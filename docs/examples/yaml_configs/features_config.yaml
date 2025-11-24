@@ -1,0 +1,97 @@
+# Feature Configuration Example
+# This example demonstrates how to configure caching, pagination, filtering, sorting, GraphQL, and WebSocket per table
+
+database:
+  url: "postgresql://postgres:postgres@localhost:5432/pylight"
+
+swagger:
+  title: "Pylight API with Custom Features"
+  version: "1.0.0"
+  description: "API with per-table feature configurations"
+
+tables:
+  # High-traffic table: caching enabled, custom pagination
+  - name: "products"
+    methods: ["GET", "POST", "PUT", "DELETE"]
+    
+    features:
+      # Caching: enabled for GET requests (requires Redis)
+      caching:
+        enabled: true
+      
+      # Pagination: custom page sizes
+      pagination:
+        enabled: true
+        default_page_size: 20  # Default items per page
+        max_page_size: 200     # Maximum items per page
+      
+      # Filtering: enabled for query parameters
+      filtering:
+        enabled: true
+      
+      # Sorting: enabled for sort parameter
+      sorting:
+        enabled: true
+      
+      # GraphQL: enabled (GraphQL endpoint available)
+      graphql: true
+      
+      # WebSocket: enabled (WebSocket endpoint available)
+      websocket: true
+
+  # Read-only table: no caching, minimal features
+  - name: "readonly_data"
+    # Only GET method enabled
+    methods: ["GET"]
+    
+    features:
+      # Caching: disabled (data changes frequently)
+      caching:
+        enabled: false
+      
+      # Pagination: enabled with small page size
+      pagination:
+        enabled: true
+        default_page_size: 5
+        max_page_size: 50
+      
+      # Filtering: disabled (simple read-only data)
+      filtering:
+        enabled: false
+      
+      # Sorting: disabled
+      sorting:
+        enabled: false
+      
+      # GraphQL: disabled
+      graphql: false
+      
+      # WebSocket: disabled
+      websocket: false
+
+  # Search table: filtering and sorting enabled, no pagination
+  - name: "search_results"
+    methods: ["GET"]
+    
+    features:
+      caching:
+        enabled: true
+      pagination:
+        enabled: false  # No pagination for search results
+      filtering:
+        enabled: true   # Advanced filtering for search
+      sorting:
+        enabled: true   # Sorting by relevance, date, etc.
+      graphql: true
+      websocket: false
+
+  # Default configuration: all features use defaults
+  - name: "users"
+    # No features specified = all features enabled with default settings
+    # Pagination: enabled, default_page_size: 10, max_page_size: 100
+    # Filtering: enabled
+    # Sorting: enabled
+    # GraphQL: enabled
+    # WebSocket: enabled
+    # Caching: enabled if Redis available
+

@@ -14,6 +14,8 @@ Auto-generated from all feature plans. Last updated: 2025-11-21
 - Bash shell scripting (POSIX-compliant), Python 3.11+ (for Pylight framework) (007-yaml-local-testing)
 - N/A (testing infrastructure only, no persistent storage) (007-yaml-local-testing)
 - PostgreSQL (via async SQLAlchemy) (008-fix-yaml-config)
+- Python 3.11+, Markdown (009-github-pages-docs)
+- Markdown files in repository, GitHub Pages hosting (009-github-pages-docs)
 
 - Python 3.11+ + FastAPI, SQLAlchemy, Strawberry GraphQL, WebSockets, PyJWT, python-jose, redis-py, PyYAML, Alembic, Click (001-pylight-framework)
 
@@ -33,9 +35,9 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3.11+: Follow standard conventions
 
 ## Recent Changes
+- 009-github-pages-docs: Added Python 3.11+, Markdown
 - 008-fix-yaml-config: Added Python 3.11+
 - 007-yaml-local-testing: Added Bash shell scripting (POSIX-compliant), Python 3.11+ (for Pylight framework)
-- 006-yaml-table-config: Added Python 3.11+
 
 
 <!-- MANUAL ADDITIONS START -->

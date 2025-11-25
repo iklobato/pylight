@@ -1,0 +1,81 @@
+site_name: Pylight Documentation
+site_description: Next-generation Python API framework documentation
+site_url: https://iklobato.github.io/pylight/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - getting-started/index.md
+    - getting-started/installation.md
+    - getting-started/quick-start.md
+    - getting-started/architecture.md
+  - Building APIs:
+    - building-apis/index.md
+    - building-apis/rest-endpoints.md
+    - building-apis/graphql.md
+    - building-apis/websocket.md
+    - building-apis/authentication.md
+    - building-apis/caching.md
+    - building-apis/pagination-filtering-sorting.md
+    - building-apis/yaml-configuration.md
+    - building-apis/database-reflection.md
+    - building-apis/plugins.md
+  - Customization:
+    - customization/index.md
+    - customization/custom-authentication.md
+    - customization/custom-caching.md
+    - customization/middleware.md
+    - customization/error-handling.md
+    - customization/deployment.md
+  - API Reference:
+    - api-reference/index.md
+    - api-reference/light-api.md
+    - api-reference/rest-endpoint.md
+    - api-reference/authentication-classes.md
+    - api-reference/caching-classes.md
+    - api-reference/configuration-options.md
+  - Use Cases:
+    - use-cases/index.md
+    - use-cases/simple-crud-api.md
+    - use-cases/authenticated-api.md
+    - use-cases/real-time-api.md
+    - use-cases/database-migration.md
+    - use-cases/multi-tenant-api.md
+  - Troubleshooting:
+    - troubleshooting/index.md
+

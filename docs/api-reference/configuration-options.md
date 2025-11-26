@@ -22,6 +22,7 @@ Complete reference for all configuration options in Pylight.
 - `caching_class` (Optional[Type[Any]]): Custom caching class
 - `caching_method_names` (list[str]): List of HTTP methods to cache
 - `pagination_class` (Optional[Type[Any]]): Custom pagination class
+- `websocket_class` (Optional[Type[WebSocketHandler]]): Custom WebSocket handler class
 
 ## YAML Configuration
 

@@ -136,14 +136,39 @@ For more examples, see [docs/examples/graphql_queries.py](docs/examples/graphql_
 
 ### WebSocket
 
-Real-time updates via WebSocket connections:
+Real-time updates via WebSocket connections. Customize WebSocket behavior by extending the base handler class:
 
 ```python
 from src.presentation.app import LightApi
 from src.domain.entities.rest_endpoint import RestEndpoint
+from src.infrastructure.websocket.base import WebSocketHandler
+from starlette.websockets import WebSocket
 from sqlalchemy import Column, Integer, String
-import asyncio
-import websockets
+from typing import Type
+import json
+
+class CustomProductHandler(WebSocketHandler):
+    """Custom WebSocket handler for Product model."""
+    
+    async def on_connect(self, websocket: WebSocket, model: Type[RestEndpoint]) -> None:
+        """Send welcome message on connection."""
+        await self.send(websocket, {"status": "connected", "message": "Welcome!"})
+    
+    async def on_message(self, websocket: WebSocket, model: Type[RestEndpoint], message: str) -> None:
+        """Handle incoming messages."""
+        try:
+            data = json.loads(message)
+            action = data.get("action")
+            
+            if action == "subscribe":
+                await self.send(websocket, {"status": "subscribed"})
+                return
+            
+            if action == "ping":
+                await self.send(websocket, {"action": "pong"})
+                return
+        except json.JSONDecodeError:
+            await self.send(websocket, {"error": "Invalid JSON"})
 
 class Product(RestEndpoint):
     __tablename__ = "products"
@@ -151,28 +176,18 @@ class Product(RestEndpoint):
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     price = Column(Integer)
+    
+    class Configuration:
+        websocket_class = CustomProductHandler  # Optional: customize WebSocket behavior
 
 app = LightApi(databaseUrl="sqlite:///app.db")
 app.register(Product)
-
-async def listen_to_updates():
-    uri = "ws://localhost:8000/ws/products"
-    async with websockets.connect(uri) as websocket:
-        await websocket.send('{"action": "subscribe", "resource": "products"}')
-        while True:
-            message = await websocket.recv()
-            print(f"Received: {message}")
-
-if __name__ == "__main__":
-    import threading
-    server_thread = threading.Thread(target=lambda: app.run(host="localhost", port=8000))
-    server_thread.start()
-    asyncio.run(listen_to_updates())
+app.run(host="localhost", port=8000)
 ```
 
-WebSocket endpoints are automatically created at `/ws/{table_name}` and broadcast create/update/delete events.
+WebSocket endpoints are automatically created at `/ws/{table_name}`. If no custom handler is specified, the default handler echoes messages back to clients.
 
-For more examples, see [docs/examples/websocket_hooks.py](docs/examples/websocket_hooks.py).
+For more examples, see [docs/examples/custom_websocket_handler.py](docs/examples/custom_websocket_handler.py).
 
 ### Authentication
 

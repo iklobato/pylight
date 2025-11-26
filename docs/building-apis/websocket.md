@@ -48,7 +48,7 @@ import websockets
 async def connect():
     uri = "ws://localhost:8000/ws/products"
     async with websockets.connect(uri) as websocket:
-        # Send subscription message
+        # Send message
         await websocket.send('{"action": "subscribe", "resource": "products"}')
         
         # Receive messages
@@ -57,6 +57,78 @@ async def connect():
 
 asyncio.run(connect())
 ```
+
+## Custom WebSocket Handlers
+
+You can customize WebSocket behavior by extending the base `WebSocketHandler` class and overriding async lifecycle methods, similar to how you customize authentication or caching.
+
+### Creating a Custom Handler
+
+```python
+from src.infrastructure.websocket.base import WebSocketHandler
+from starlette.websockets import WebSocket
+from src.domain.entities.rest_endpoint import RestEndpoint
+from typing import Type
+import json
+
+class CustomProductHandler(WebSocketHandler):
+    """Custom WebSocket handler for Product model."""
+    
+    async def on_connect(
+        self, 
+        websocket: WebSocket, 
+        model: Type[RestEndpoint]
+    ) -> None:
+        """Handle connection - send welcome message."""
+        await self.send(websocket, {"type": "connected", "message": "Welcome!"})
+    
+    async def on_message(
+        self, 
+        websocket: WebSocket, 
+        model: Type[RestEndpoint], 
+        message: str
+    ) -> None:
+        """Handle incoming messages."""
+        try:
+            data = json.loads(message)
+            action = data.get("action")
+            
+            if action == "subscribe":
+                await self.send(websocket, {"status": "subscribed"})
+                return
+            
+            if action == "ping":
+                await self.send(websocket, {"action": "pong"})
+                return
+        except json.JSONDecodeError:
+            await self.send(websocket, {"error": "Invalid JSON"})
+    
+    async def on_disconnect(
+        self, 
+        websocket: WebSocket, 
+        model: Type[RestEndpoint]
+    ) -> None:
+        """Handle disconnection."""
+        print("Client disconnected")
+```
+
+### Configuring Custom Handler
+
+Configure your custom handler via the model's Configuration class:
+
+```python
+class Product(RestEndpoint):
+    __tablename__ = "products"
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100))
+    price = Column(Integer)
+    
+    class Configuration:
+        websocket_class = CustomProductHandler
+```
+
+The framework automatically uses your custom handler for WebSocket connections to `/ws/products`.
 
 ## Subscription
 
@@ -130,7 +202,7 @@ async def websocket_client():
     uri = "ws://localhost:8000/ws/products"
     
     async with websockets.connect(uri) as websocket:
-        # Subscribe to products
+        # Send message
         subscribe = {
             "action": "subscribe",
             "resource": "products"
@@ -141,10 +213,26 @@ async def websocket_client():
         while True:
             message = await websocket.recv()
             data = json.loads(message)
-            print(f"Event: {data['event']}, Data: {data['data']}")
+            print(f"Received: {data}")
 
 asyncio.run(websocket_client())
 ```
+
+## Helper Methods
+
+The base `WebSocketHandler` class provides a `send()` helper method for sending messages:
+
+```python
+class MyHandler(WebSocketHandler):
+    async def on_message(self, websocket, model, message):
+        # Send string
+        await self.send(websocket, "Hello, client!")
+        
+        # Send dict (auto-converted to JSON)
+        await self.send(websocket, {"type": "notification", "message": "Update available"})
+```
+
+The helper method automatically converts dicts to JSON and handles errors gracefully.
 
 [View source: `docs/examples/websocket_hooks.py`](https://github.com/iklobato/pylight/blob/main/docs/examples/websocket_hooks.py)
 

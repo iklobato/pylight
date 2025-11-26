@@ -1,6 +1,7 @@
 """Base RestEndpoint class for all models."""
 
 from typing import Any, Optional, Type
+
 from sqlalchemy import Column
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import DeclarativeBase
@@ -32,6 +33,7 @@ class RestEndpoint(Base):
         - caching_class: Custom caching class
         - caching_method_names: List of HTTP methods to cache
         - pagination_class: Custom pagination class
+        - websocket_class: Custom WebSocket handler class
         """
 
         authentication_class: Optional[Type[Any]] = None
@@ -39,6 +41,7 @@ class RestEndpoint(Base):
         caching_class: Optional[Type[Any]] = None
         caching_method_names: list[str] = []
         pagination_class: Optional[Type[Any]] = None
+        websocket_class: Optional[Type[Any]] = None
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         """Validate subclass configuration."""
@@ -46,9 +49,18 @@ class RestEndpoint(Base):
         if not hasattr(cls, "Configuration"):
             cls.Configuration = type("Configuration", (), {})
         if not isinstance(cls.Configuration, type):
-            raise PylightError(
-                f"{cls.__name__}.Configuration must be a class, not an instance"
-            )
+            raise PylightError(f"{cls.__name__}.Configuration must be a class, not an instance")
+
+        # Validate websocket_class if provided
+        config = cls.getConfiguration()
+        if hasattr(config, "websocket_class") and config.websocket_class is not None:
+            from src.infrastructure.websocket.base import WebSocketHandler
+
+            if not issubclass(config.websocket_class, WebSocketHandler):
+                raise PylightError(
+                    f"{cls.__name__}.Configuration.websocket_class must be a subclass of WebSocketHandler, "
+                    f"got {config.websocket_class}"
+                )
 
     @classmethod
     def getConfiguration(cls) -> Any:
@@ -64,10 +76,9 @@ class RestEndpoint(Base):
     @classmethod
     def getTableName(cls) -> str:
         """Get the table name for this model.
-        
+
         Returns __tablename__ if defined, otherwise lowercase class name.
         """
         if hasattr(cls, "__tablename__") and cls.__tablename__:
             return cls.__tablename__
         return cls.__name__.lower()
-

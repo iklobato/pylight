@@ -1,0 +1,33 @@
+database:
+  url: "postgresql://postgres:postgres@localhost:5432/pylight"
+
+swagger:
+  title: "Pylight API"
+  version: "1.0.0"
+  description: "Test API configuration"
+
+tables:
+  - name: "users"
+    methods: ["GET", "POST", "PUT", "DELETE"]
+    features:
+      caching:
+        enabled: true
+      pagination:
+        enabled: true
+        default_page_size: 10
+        max_page_size: 100
+      filtering:
+        enabled: true
+      sorting:
+        enabled: true
+      graphql: true
+      websocket: true
+
+  - name: "products"
+    methods: ["GET", "POST"]
+    features:
+      pagination:
+        enabled: true
+        default_page_size: 20
+
+

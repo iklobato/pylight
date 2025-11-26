@@ -1,0 +1,18 @@
+# CLI Command Examples for Testing
+
+## Init Command
+pylight init --name myproject --path ./myproject
+
+## Start Command
+pylight start --config config.yaml --port 8000 --host 0.0.0.0
+
+## Migrate Command
+pylight migrate --config config.yaml --revision head
+
+## Generate Command
+pylight generate --table users --methods GET,POST
+
+## Reflect Command
+pylight reflect --config config.yaml --database-url postgresql://localhost/testdb
+
+

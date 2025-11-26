@@ -1,0 +1,57 @@
+application:
+  name: Pylight API
+  version: 1.0.0
+  environment: production
+
+database:
+  type: postgresql
+  connection:
+    host: db.example.com
+    port: 5432
+    database: myapp
+    user: app_user
+    password: secure_password
+  pool:
+    min_size: 5
+    max_size: 20
+    timeout: 30
+
+authentication:
+  jwt:
+    algorithm: HS256
+    secret_key: your-secret-key-here
+    expiration: 3600
+  oauth2:
+    enabled: true
+    providers:
+      - name: google
+        client_id: google_client_id
+        client_secret: google_client_secret
+      - name: github
+        client_id: github_client_id
+        client_secret: github_client_secret
+
+features:
+  caching:
+    enabled: true
+    backend: redis
+    ttl: 300
+  pagination:
+    enabled: true
+    default_page_size: 20
+    max_page_size: 100
+  filtering:
+    enabled: true
+    operators: [eq, ne, gt, lt, gte, lte, like, in]
+
+logging:
+  level: INFO
+  format: json
+  handlers:
+    - type: file
+      path: /var/log/app.log
+      rotation: daily
+    - type: console
+      enabled: true
+
+

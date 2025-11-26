@@ -1,0 +1,25 @@
+# Expected CLI Outputs for Testing
+
+## Init Command Success
+Project initialized successfully at ./myproject
+
+## Start Command Success
+Starting Pylight server on 0.0.0.0:8000
+Server started successfully
+
+## Migrate Command Success
+Database migrations applied successfully
+
+## Generate Command Success
+Code generated for table: users
+
+## Reflect Command Success
+Database schema reflected successfully
+
+## Error: Missing Required Option
+Error: Missing required option: --config
+
+## Error: Invalid Choice
+Error: Invalid choice: invalid_value. Choose from: [valid1, valid2, valid3]
+
+

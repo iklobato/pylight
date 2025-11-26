@@ -2,9 +2,9 @@
 
 from typing import Any, Optional
 from starlette.requests import Request
-import jwt
 
 from src.infrastructure.auth.base import JWTAuthentication
+from src.infrastructure.auth.jwt_manual import JWTDecoder
 from src.domain.errors import AuthenticationError
 
 
@@ -26,12 +26,14 @@ class DefaultJWTAuthentication(JWTAuthentication):
 
         token = authHeader.split(" ")[1]
         try:
-            payload = jwt.decode(token, self.secretKey, algorithms=["HS256"])
+            payload = JWTDecoder.decode(
+                token, secretKey=self.secretKey, allowlist=self.allowlist
+            )
             return {
                 "username": payload.get("username"),
                 "role": payload.get("role"),
                 "sub": payload.get("sub"),
             }
-        except jwt.InvalidTokenError:
-            raise AuthenticationError("Invalid JWT token")
+        except AuthenticationError:
+            raise
 

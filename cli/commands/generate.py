@@ -1,7 +1,7 @@
 """CLI generate command for code generation."""
 
 from pathlib import Path
-import click
+import click_compat as click
 
 
 @click.command("generate")

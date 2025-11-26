@@ -1,6 +1,6 @@
 """CLI entry point."""
 
-import click
+import click_compat as click
 from cli.commands.init import initCommand
 from cli.commands.migrate import migrateCommand
 from cli.commands.generate import generateCommand

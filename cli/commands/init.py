@@ -3,7 +3,7 @@
 import os
 import shutil
 from pathlib import Path
-import click
+import click_compat as click
 
 
 @click.command("init")

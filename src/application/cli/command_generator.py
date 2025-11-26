@@ -1,7 +1,7 @@
 """CLI command generator."""
 
 from typing import Any, Type
-import click
+import click_compat as click
 
 from src.domain.entities.rest_endpoint import RestEndpoint
 
@@ -10,7 +10,7 @@ class CLICommandGenerator:
     """Generates CLI commands from RestEndpoint models."""
 
     @staticmethod
-    def generateCommands(model: Type[RestEndpoint]) -> list[click.Command]:
+    def generateCommands(model: Type[RestEndpoint]) -> list:
         """Generate CLI commands for a model.
 
         Args:

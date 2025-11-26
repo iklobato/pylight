@@ -12,8 +12,7 @@ This section covers all the features available in Pylight for building powerful 
 
 ### Security & Access Control
 
-- **[Authentication](authentication.md)** - JWT and OAuth2 authentication
-- **[Permissions](permissions.md)** - Role-based access control (covered in authentication)
+- **[Authentication](authentication.md)** - JWT and OAuth2 authentication with role-based access control
 
 ### Performance & Data Management
 

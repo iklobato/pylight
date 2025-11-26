@@ -68,6 +68,7 @@ nav:
     - api-reference/rest-endpoint.md
     - api-reference/authentication-classes.md
     - api-reference/caching-classes.md
+    - api-reference/websocket-classes.md
     - api-reference/configuration-options.md
   - Use Cases:
     - use-cases/index.md

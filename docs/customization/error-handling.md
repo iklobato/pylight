@@ -18,7 +18,7 @@ Pylight handles errors at multiple levels:
 Raised when configuration is invalid:
 
 ```python
-from src.domain.errors import ConfigurationError
+from pylight.domain.errors import ConfigurationError
 
 raise ConfigurationError("Invalid database URL")
 ```
@@ -28,7 +28,7 @@ raise ConfigurationError("Invalid database URL")
 Raised when database operations fail:
 
 ```python
-from src.domain.errors import DatabaseError
+from pylight.domain.errors import DatabaseError
 
 raise DatabaseError("Failed to connect to database")
 ```
@@ -38,7 +38,7 @@ raise DatabaseError("Failed to connect to database")
 Raised when authentication fails:
 
 ```python
-from src.domain.errors import AuthenticationError
+from pylight.domain.errors import AuthenticationError
 
 raise AuthenticationError("Invalid credentials")
 ```

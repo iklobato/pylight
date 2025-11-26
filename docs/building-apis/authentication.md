@@ -38,9 +38,9 @@ tables:
 ### Programmatic Setup
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
-from src.infrastructure.auth.jwt import DefaultJWTAuthentication
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
+from pylight.infrastructure.auth.jwt import DefaultJWTAuthentication
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):
@@ -114,7 +114,7 @@ tables:
 ### Programmatic Setup
 
 ```python
-from src.infrastructure.auth.oauth2 import DefaultOAuth2Authentication
+from pylight.infrastructure.auth.oauth2 import DefaultOAuth2Authentication
 
 class Product(RestEndpoint):
     class Configuration:
@@ -174,7 +174,7 @@ tables:
 Extend the base authentication classes for custom logic:
 
 ```python
-from src.infrastructure.auth.jwt import DefaultJWTAuthentication
+from pylight.infrastructure.auth.jwt import DefaultJWTAuthentication
 from starlette.requests import Request
 
 class CustomJWTAuthentication(DefaultJWTAuthentication):

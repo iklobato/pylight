@@ -15,7 +15,7 @@ You can customize caching by:
 ### Basic Extension
 
 ```python
-from src.infrastructure.cache.redis import DefaultRedisCache
+from pylight.infrastructure.cache.redis import DefaultRedisCache
 from typing import Any, Optional
 
 class CustomRedisCache(DefaultRedisCache):
@@ -40,7 +40,7 @@ class CustomRedisCache(DefaultRedisCache):
 ### Implementing Base Interface
 
 ```python
-from src.infrastructure.cache.base import Cache
+from pylight.infrastructure.cache.base import Cache
 from typing import Any, Optional
 
 class MemoryCache(Cache):
@@ -69,8 +69,8 @@ class MemoryCache(Cache):
 ## Using Custom Cache
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 
 class Product(RestEndpoint):
     class Configuration:

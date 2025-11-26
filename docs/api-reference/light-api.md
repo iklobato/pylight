@@ -165,8 +165,8 @@ app.run(host="0.0.0.0", port=8000, debug=True)
 ### Basic Usage
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):

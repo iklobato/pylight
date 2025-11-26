@@ -36,8 +36,8 @@ Pylight will:
 ### Programmatic Usage
 
 ```python
-from src.infrastructure.database.reflection import DatabaseReflection
-from src.presentation.app import LightApi
+from pylight.infrastructure.database.reflection import DatabaseReflection
+from pylight.presentation.app import LightApi
 
 # Reflect database
 reflection = DatabaseReflection("postgresql://postgres:postgres@localhost:5432/pylight")
@@ -65,7 +65,7 @@ table_info = reflection.reflectTable("products")
 Reflect all tables in a database:
 
 ```python
-from src.infrastructure.database.reflection import DatabaseReflection
+from pylight.infrastructure.database.reflection import DatabaseReflection
 
 reflection = DatabaseReflection("postgresql://postgres:postgres@localhost:5432/pylight")
 tables = reflection.reflectTables()

@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 
 
 class Product(RestEndpoint):

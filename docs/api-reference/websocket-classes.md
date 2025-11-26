@@ -187,7 +187,7 @@ Configure a custom WebSocket handler class for a model.
 
 **Example**:
 ```python
-from src.infrastructure.websocket.base import WebSocketHandler
+from pylight.infrastructure.websocket.base import WebSocketHandler
 
 class CustomHandler(WebSocketHandler):
     async def on_message(self, websocket, model, message):

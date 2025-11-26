@@ -199,7 +199,7 @@ Manages database connections:
 Extend `DefaultJWTAuthentication` or `DefaultOAuth2Authentication`:
 
 ```python
-from src.infrastructure.auth.jwt import DefaultJWTAuthentication
+from pylight.infrastructure.auth.jwt import DefaultJWTAuthentication
 
 class CustomAuth(DefaultJWTAuthentication):
     # Custom authentication logic
@@ -211,7 +211,7 @@ class CustomAuth(DefaultJWTAuthentication):
 Extend `DefaultRedisCache`:
 
 ```python
-from src.infrastructure.cache.redis import DefaultRedisCache
+from pylight.infrastructure.cache.redis import DefaultRedisCache
 
 class CustomCache(DefaultRedisCache):
     # Custom caching logic
@@ -223,7 +223,7 @@ class CustomCache(DefaultRedisCache):
 Implement the `Plugin` interface:
 
 ```python
-from src.domain.plugins.interface import Plugin
+from pylight.domain.plugins.interface import Plugin
 
 class CustomPlugin(Plugin):
     def initialize(self, app):

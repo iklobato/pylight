@@ -15,7 +15,7 @@ You can customize authentication by:
 ### Basic Extension
 
 ```python
-from src.infrastructure.auth.jwt import DefaultJWTAuthentication
+from pylight.infrastructure.auth.jwt import DefaultJWTAuthentication
 from starlette.requests import Request
 from typing import Optional, Any
 
@@ -41,8 +41,8 @@ class CustomJWTAuthentication(DefaultJWTAuthentication):
 ### Using Custom Authentication
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):
@@ -68,7 +68,7 @@ app.run(host="localhost", port=8000)
 ### Custom OAuth2 Provider
 
 ```python
-from src.infrastructure.auth.oauth2 import DefaultOAuth2Authentication
+from pylight.infrastructure.auth.oauth2 import DefaultOAuth2Authentication
 from starlette.requests import Request
 from typing import Optional, Any
 
@@ -91,7 +91,7 @@ class CustomOAuth2Authentication(DefaultOAuth2Authentication):
 ### Implementing Base Interface
 
 ```python
-from src.infrastructure.auth.base import Authentication
+from pylight.infrastructure.auth.base import Authentication
 from starlette.requests import Request
 from typing import Optional, Any
 

@@ -42,7 +42,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 ### Programmatic Addition
 
 ```python
-from src.presentation.app import LightApi
+from pylight.presentation.app import LightApi
 
 app = LightApi(databaseUrl="sqlite:///app.db")
 app.addMiddleware([LoggingMiddleware])

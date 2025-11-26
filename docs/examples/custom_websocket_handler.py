@@ -16,9 +16,9 @@ from typing import Type
 from sqlalchemy import Column, Integer, String
 from starlette.websockets import WebSocket
 
-from src.domain.entities.rest_endpoint import RestEndpoint
-from src.infrastructure.websocket.base import WebSocketHandler
-from src.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
+from pylight.infrastructure.websocket.base import WebSocketHandler
+from pylight.presentation.app import LightApi
 
 
 # Example 1: Basic Custom Handler

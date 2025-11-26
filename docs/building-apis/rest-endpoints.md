@@ -17,8 +17,8 @@ When you register a model with Pylight, it automatically creates REST endpoints 
 Define a model and register it:
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):

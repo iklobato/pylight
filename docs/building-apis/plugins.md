@@ -16,8 +16,8 @@ Plugins provide:
 A plugin is a class that implements the `Plugin` interface:
 
 ```python
-from src.domain.plugins.interface import Plugin
-from src.presentation.app import LightApi
+from pylight.domain.plugins.interface import Plugin
+from pylight.presentation.app import LightApi
 
 class MyPlugin(Plugin):
     def initialize(self, app: LightApi):
@@ -40,8 +40,8 @@ class MyPlugin(Plugin):
 Add custom routes:
 
 ```python
-from src.domain.plugins.interface import Plugin
-from src.presentation.app import LightApi
+from pylight.domain.plugins.interface import Plugin
+from pylight.presentation.app import LightApi
 from starlette.routing import Route
 from starlette.responses import JSONResponse
 
@@ -65,8 +65,8 @@ class HealthCheckPlugin(Plugin):
 Add custom middleware:
 
 ```python
-from src.domain.plugins.interface import Plugin
-from src.presentation.app import LightApi
+from pylight.domain.plugins.interface import Plugin
+from pylight.presentation.app import LightApi
 from starlette.middleware.base import BaseHTTPMiddleware
 
 class LoggingPlugin(Plugin):
@@ -91,7 +91,7 @@ class LoggingPlugin(Plugin):
 ### Programmatic Registration
 
 ```python
-from src.presentation.app import LightApi
+from pylight.presentation.app import LightApi
 
 app = LightApi(databaseUrl="sqlite:///app.db")
 app.registerPlugin(HealthCheckPlugin)
@@ -114,8 +114,8 @@ app.registerPlugin(CustomAuthPlugin)
 Collect API metrics:
 
 ```python
-from src.domain.plugins.interface import Plugin
-from src.presentation.app import LightApi
+from pylight.domain.plugins.interface import Plugin
+from pylight.presentation.app import LightApi
 from starlette.routing import Route
 from starlette.responses import JSONResponse
 

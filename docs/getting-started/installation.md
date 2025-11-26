@@ -42,7 +42,7 @@ After installation, verify that Pylight is installed correctly:
 pylight --version
 
 # Or verify Python import
-python3 -c "from src.presentation.app import LightApi; print('Pylight installed successfully')"
+python3 -c "from pylight.presentation.app import LightApi; print('Pylight installed successfully')"
 ```
 
 ## Dependencies

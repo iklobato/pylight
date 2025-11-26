@@ -60,9 +60,9 @@ def getTableName(cls) -> str
 ## Usage Example
 
 ```python
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
-from src.infrastructure.auth.jwt import DefaultJWTAuthentication
+from pylight.infrastructure.auth.jwt import DefaultJWTAuthentication
 
 class Product(RestEndpoint):
     __tablename__ = "products"

@@ -19,7 +19,7 @@ Pylight provides extensive customization options:
 Extend authentication classes to implement custom authentication logic:
 
 ```python
-from src.infrastructure.auth.jwt import DefaultJWTAuthentication
+from pylight.infrastructure.auth.jwt import DefaultJWTAuthentication
 
 class CustomAuth(DefaultJWTAuthentication):
     # Custom authentication logic
@@ -31,7 +31,7 @@ class CustomAuth(DefaultJWTAuthentication):
 Implement custom cache backends:
 
 ```python
-from src.infrastructure.cache.base import RedisCache
+from pylight.infrastructure.cache.base import RedisCache
 
 class CustomCache(RedisCache):
     # Custom caching logic

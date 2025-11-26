@@ -48,7 +48,7 @@ tables:
 Or programmatically:
 
 ```python
-from src.infrastructure.cache.redis import DefaultRedisCache
+from pylight.infrastructure.cache.redis import DefaultRedisCache
 
 class Product(RestEndpoint):
     __tablename__ = "products"
@@ -158,7 +158,7 @@ class CustomCache(DefaultRedisCache):
 ### Manual Cache Clearing
 
 ```python
-from src.infrastructure.cache.redis import DefaultRedisCache
+from pylight.infrastructure.cache.redis import DefaultRedisCache
 
 cache = DefaultRedisCache("redis://localhost:6379")
 await cache.flush()  # Clear all cache

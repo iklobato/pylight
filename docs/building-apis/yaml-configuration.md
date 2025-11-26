@@ -42,7 +42,7 @@ pylight start --config config.yaml
 Or programmatically:
 
 ```python
-from src.presentation.app import LightApi
+from pylight.presentation.app import LightApi
 
 app = LightApi.fromYamlConfig("config.yaml")
 app.run(host="localhost", port=8000)

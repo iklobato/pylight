@@ -31,8 +31,8 @@ python main.py
 ## Quick Example
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):
@@ -63,8 +63,8 @@ Pylight follows a clean layered architecture:
 Pylight automatically generates REST endpoints (GET, POST, PUT, DELETE) for your models:
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):
@@ -93,8 +93,8 @@ For more complex examples, see [docs/examples/rest_endpoints.py](docs/examples/r
 GraphQL queries and mutations are automatically generated:
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):
@@ -139,9 +139,9 @@ For more examples, see [docs/examples/graphql_queries.py](docs/examples/graphql_
 Real-time updates via WebSocket connections. Customize WebSocket behavior by extending the base handler class:
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
-from src.infrastructure.websocket.base import WebSocketHandler
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
+from pylight.infrastructure.websocket.base import WebSocketHandler
 from starlette.websockets import WebSocket
 from sqlalchemy import Column, Integer, String
 from typing import Type
@@ -194,9 +194,9 @@ For more examples, see [docs/examples/custom_websocket_handler.py](docs/examples
 Enable JWT authentication for your endpoints:
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
-from src.infrastructure.auth.jwt import DefaultJWTAuthentication
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
+from pylight.infrastructure.auth.jwt import DefaultJWTAuthentication
 from sqlalchemy import Column, Integer, String
 import jwt
 import os
@@ -236,9 +236,9 @@ For OAuth2 authentication, see the authentication examples in the framework docu
 Enable Redis caching for improved performance:
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
-from src.infrastructure.cache.redis import DefaultRedisCache
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
+from pylight.infrastructure.cache.redis import DefaultRedisCache
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):
@@ -269,8 +269,8 @@ Caching requires Redis to be installed and running. GET requests are cached auto
 Built-in support for pagination, filtering, and sorting:
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):
@@ -298,8 +298,8 @@ Configure your app using YAML or class-based configuration:
 **YAML Configuration:**
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):
@@ -324,8 +324,8 @@ app.run(host="localhost", port=8000)
 **Class-based Configuration:**
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):
@@ -359,7 +359,7 @@ The generated models can be used directly with Pylight:
 
 ```python
 from models.product import Product  # Generated model
-from src.presentation.app import LightApi
+from pylight.presentation.app import LightApi
 
 app = LightApi(databaseUrl="postgresql://user:pass@localhost/mydb")
 app.register(Product)
@@ -371,9 +371,9 @@ app.run(host="localhost", port=8000)
 Extend Pylight with custom plugins:
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.plugins.interface import Plugin
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.plugins.interface import Plugin
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):

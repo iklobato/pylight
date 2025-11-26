@@ -7,8 +7,8 @@ This guide will help you create your first Pylight API in minutes. By the end, y
 Create a Python file (e.g., `app.py`) and define your first model:
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):
@@ -43,8 +43,8 @@ app.run(host="localhost", port=8000)
 Here's the complete `app.py` file:
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):

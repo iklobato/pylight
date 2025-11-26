@@ -13,8 +13,8 @@ When you register a model, Pylight automatically creates:
 ## Basic Example
 
 ```python
-from src.presentation.app import LightApi
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.presentation.app import LightApi
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):
@@ -65,9 +65,9 @@ You can customize WebSocket behavior by extending the base `WebSocketHandler` cl
 ### Creating a Custom Handler
 
 ```python
-from src.infrastructure.websocket.base import WebSocketHandler
+from pylight.infrastructure.websocket.base import WebSocketHandler
 from starlette.websockets import WebSocket
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from typing import Type
 import json
 

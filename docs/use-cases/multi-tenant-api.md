@@ -12,7 +12,7 @@ This use case demonstrates:
 ## Step 1: Define Model with Tenant
 
 ```python
-from src.domain.entities.rest_endpoint import RestEndpoint
+from pylight.domain.entities.rest_endpoint import RestEndpoint
 from sqlalchemy import Column, Integer, String
 
 class Product(RestEndpoint):

@@ -33,7 +33,7 @@ tables:
 ## Step 2: Start Application
 
 ```python
-from src.presentation.app import LightApi
+from pylight.presentation.app import LightApi
 
 app = LightApi.fromYamlConfig("config.yaml")
 app.run(host="localhost", port=8000)

@@ -1,0 +1,29 @@
+# Updated test values for upgrade testing
+image:
+  repository: pylight/pylight
+  tag: "latest"
+
+database:
+  connectionString: "postgresql://postgres:postgres@host.docker.internal:5432/testdb"
+
+config:
+  inline:
+    swagger:
+      title: "Updated Test API"
+      version: "2.0.0"
+      description: "Updated configuration for upgrade testing"
+    tables:
+      - name: "products"
+      - name: "users"
+      - name: "orders"  # Added new table
+
+replicaCount: 1
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+

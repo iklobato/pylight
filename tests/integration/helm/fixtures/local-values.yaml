@@ -1,0 +1,18 @@
+# Test fixture values for local deployment testing
+image:
+  repository: pylight/pylight
+  tag: "latest"
+
+database:
+  connectionString: "postgresql://postgres:postgres@host.docker.internal:5432/testdb"
+
+config:
+  inline:
+    swagger:
+      title: "Test API"
+      version: "1.0.0"
+    tables:
+      - name: "products"
+
+replicaCount: 1
+

@@ -1,0 +1,60 @@
+# Test values for local Helm chart deployment
+# Uses local PostgreSQL database accessible via host.docker.internal
+
+image:
+  repository: pylight/pylight
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Database connection - uses host.docker.internal to access localhost PostgreSQL from minikube
+database:
+  connectionString: "postgresql://postgres:postgres@host.docker.internal:5432/testdb"
+
+# Minimal API configuration for testing
+config:
+  inline:
+    swagger:
+      title: "Pylight Test API"
+      version: "1.0.0"
+      description: "Local test API for Helm chart validation"
+    tables:
+      - name: "products"
+      - name: "users"
+
+# Single replica for initial testing
+replicaCount: 1
+
+# Minimal resources for local testing
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# Service configuration
+service:
+  port: 8000
+  type: ClusterIP
+
+# Deployment strategy
+deployment:
+  strategy:
+    type: RollingUpdate
+    maxSurge: 1
+    maxUnavailable: 0
+
+# Health checks
+healthCheck:
+  livenessProbe:
+    enabled: true
+    path: "/health"
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    enabled: true
+    path: "/health"
+    initialDelaySeconds: 10
+    periodSeconds: 5
+

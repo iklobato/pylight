@@ -16,6 +16,8 @@ A next-generation Python API framework that automatically generates REST endpoin
 
 ## Quick Start
 
+### Local Development
+
 ```bash
 # Install
 pip install pylight
@@ -27,6 +29,21 @@ cd my-api
 # Run the server
 python main.py
 ```
+
+### Kubernetes Deployment
+
+Deploy Pylight to Kubernetes using the Helm chart:
+
+```bash
+# Add the Helm repository
+helm repo add iklobato https://iklobato.github.io/pylight/charts
+helm repo update
+
+# Install Pylight
+helm install my-api iklobato/pylight -f values.yaml
+```
+
+See the [Helm Chart documentation](charts/pylight/README.md) for detailed configuration options.
 
 ## Quick Example
 

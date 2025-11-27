@@ -15,7 +15,14 @@ This chart deploys a Pylight API service on a Kubernetes cluster using the Helm 
 
 ## Installing the Chart
 
-### Basic Installation
+### From Helm Repository (Recommended)
+
+Add the Pylight Helm repository:
+
+```bash
+helm repo add iklobato https://iklobato.github.io/pylight/charts
+helm repo update
+```
 
 Create a `values.yaml` file:
 
@@ -34,6 +41,14 @@ config:
 ```
 
 Install the chart:
+
+```bash
+helm install my-api iklobato/pylight -f values.yaml
+```
+
+### From Local Chart Directory
+
+Alternatively, install directly from the chart directory:
 
 ```bash
 helm install my-api ./charts/pylight -f values.yaml

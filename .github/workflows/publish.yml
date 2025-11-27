@@ -91,7 +91,14 @@ jobs:
       # Step 9: Validate Helm chart before packaging
       - name: Validate Helm chart
         run: |
-          # Use helm template to validate chart structure (more reliable than lint)
+          # Verify Chart.yaml exists
+          if [ ! -f charts/pylight/Chart.yaml ]; then
+            echo "Error: Chart.yaml file not found"
+            exit 1
+          fi
+          echo "✓ Chart.yaml found"
+          
+          # Use helm template to validate chart structure
           if ! helm template test-release charts/pylight > /dev/null 2>&1; then
             echo "Error: Helm chart template validation failed"
             helm template test-release charts/pylight
@@ -99,10 +106,11 @@ jobs:
           fi
           echo "✓ Helm chart template validation passed"
           
-          # Try lint with error suppression for known Helm 3.14+ issues
-          # The lint may fail with "templates/: Chart.yaml file is missing" 
-          # which is a false positive in some Helm versions
-          helm lint charts/pylight --quiet 2>&1 | grep -v "templates/: Chart.yaml file is missing" || true
+          # Run lint but ignore known false positives
+          # Some Helm versions report "templates/: Chart.yaml file is missing" incorrectly
+          set +e
+          helm lint charts/pylight 2>&1 | grep -v "templates/: Chart.yaml file is missing" | grep -v "unable to load chart" || true
+          set -e
           echo "✓ Helm chart validation completed"
 
       # Step 10: Package Helm chart into .tgz archive

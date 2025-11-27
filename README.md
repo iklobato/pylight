@@ -43,6 +43,8 @@ helm repo update
 helm install my-api iklobato/pylight -f values.yaml
 ```
 
+**Docker Images**: Published to `iklob1/pylight` on Docker Hub
+
 See the [Helm Chart documentation](charts/pylight/README.md) for detailed configuration options.
 
 ## Quick Example

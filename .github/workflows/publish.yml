@@ -57,8 +57,8 @@ jobs:
           context: .
           push: true
           tags: |
-            iklobato/pylight:${{ github.ref_name }}
-            iklobato/pylight:latest
+            iklob1/pylight:${{ github.ref_name }}
+            iklob1/pylight:latest
           platforms: linux/amd64
         continue-on-error: false
 

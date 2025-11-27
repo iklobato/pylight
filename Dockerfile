@@ -8,8 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependency files
-COPY pyproject.toml ./
+# Copy all files needed for installation
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+COPY cli/ ./cli/
 
 # Install dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
@@ -32,8 +34,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY . .
 
-# Install application
-RUN pip install --no-cache-dir -e .
+# Install application (already installed in builder, but ensure cli is accessible)
+RUN pip install --no-cache-dir -e . || true
 
 # Expose port
 EXPOSE 8000

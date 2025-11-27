@@ -48,6 +48,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          registry: docker.io
         continue-on-error: false
 
       # Step 5: Build and push Docker image with version and latest tags

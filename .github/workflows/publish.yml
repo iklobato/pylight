@@ -114,18 +114,19 @@ jobs:
         run: |
           mkdir -p charts-dist
           CHART_DIR="charts/pylight"
-          ABS_CHART_DIR="$(cd "$CHART_DIR" && pwd)"
           
-          # Package from the chart directory itself
-          cd "$ABS_CHART_DIR"
-          if ! helm package . --destination "${{ github.workspace }}/charts-dist"; then
+          # Verify Chart.yaml exists before packaging
+          if [ ! -f "$CHART_DIR/Chart.yaml" ]; then
+            echo "Error: Chart.yaml not found at $CHART_DIR/Chart.yaml"
+            exit 1
+          fi
+          
+          # Package the chart (this will also validate the chart structure)
+          if ! helm package "$CHART_DIR" --destination ./charts-dist; then
             echo "Error: Helm chart packaging failed"
             exit 1
           fi
           echo "✓ Helm chart packaged successfully"
-          
-          # Return to workspace root
-          cd "${{ github.workspace }}"
 
       # Step 10: Check if chart version already exists (prevent overwrite)
       - name: Check version conflict

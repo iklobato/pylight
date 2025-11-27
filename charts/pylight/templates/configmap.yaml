@@ -16,4 +16,3 @@ data:
 {{- toYaml $config | indent 4 }}
 {{- end }}
 {{- end }}
-

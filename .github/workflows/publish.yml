@@ -193,24 +193,30 @@ jobs:
         run: |
           REPO_URL="https://iklobato.github.io/pylight/charts"
           
-          # Check if existing-index.yaml exists and is valid
+          # Try to merge with existing index, but fall back to new index if merge fails
           if [ -f existing-index.yaml ] && [ -s existing-index.yaml ]; then
-            # Validate it's proper YAML before merging
-            if python3 -c "import yaml; yaml.safe_load(open('existing-index.yaml'))" 2>/dev/null; then
-              echo "Merging with existing index..."
-              if ! helm repo index ./charts-dist --url "$REPO_URL" --merge existing-index.yaml; then
-                echo "Error: Failed to generate repository index with merge"
-                exit 1
+            # Check if it looks like a valid Helm index file (has 'apiVersion' and 'entries' keys)
+            if grep -q "apiVersion:" existing-index.yaml && grep -q "entries:" existing-index.yaml; then
+              echo "Attempting to merge with existing index..."
+              # Try merge, but don't fail if it doesn't work - we'll create new index instead
+              if helm repo index ./charts-dist --url "$REPO_URL" --merge existing-index.yaml 2>/dev/null; then
+                echo "✓ Successfully merged with existing index"
+              else
+                echo "Warning: Failed to merge with existing index, creating new index..."
+                if ! helm repo index ./charts-dist --url "$REPO_URL"; then
+                  echo "Error: Failed to generate repository index"
+                  exit 1
+                fi
               fi
             else
-              echo "Existing index is invalid, creating new index..."
+              echo "Existing index doesn't have expected Helm format, creating new index..."
               if ! helm repo index ./charts-dist --url "$REPO_URL"; then
                 echo "Error: Failed to generate repository index"
                 exit 1
               fi
             fi
           else
-            echo "No existing index, creating new one..."
+            echo "No existing index found, creating new one..."
             if ! helm repo index ./charts-dist --url "$REPO_URL"; then
               echo "Error: Failed to generate repository index"
               exit 1

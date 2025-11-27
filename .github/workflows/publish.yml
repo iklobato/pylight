@@ -167,24 +167,56 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           INDEX_URL="https://iklobato.github.io/pylight/charts/index.yaml"
-          # Download existing index if it exists
-          curl -s "$INDEX_URL" -o existing-index.yaml || touch existing-index.yaml
-          # Check if version already exists
-          if grep -q "version: $VERSION" existing-index.yaml 2>/dev/null; then
-            echo "Error: Chart version $VERSION already exists in repository"
-            echo "Cannot publish duplicate version. Use a new version number."
-            exit 1
+          
+          # Download existing index if it exists, validate it's proper YAML
+          if curl -sf "$INDEX_URL" -o existing-index.yaml; then
+            # Validate the downloaded file is valid YAML/JSON
+            if ! python3 -c "import yaml; yaml.safe_load(open('existing-index.yaml'))" 2>/dev/null; then
+              echo "Warning: Existing index file is not valid YAML, will create new index"
+              rm -f existing-index.yaml
+            else
+              # Check if version already exists
+              if grep -q "version: $VERSION" existing-index.yaml 2>/dev/null; then
+                echo "Error: Chart version $VERSION already exists in repository"
+                echo "Cannot publish duplicate version. Use a new version number."
+                exit 1
+              fi
+              echo "✓ Version $VERSION is available for publishing"
+            fi
+          else
+            echo "No existing index found, will create new one"
+            touch existing-index.yaml
           fi
-          echo "✓ Version $VERSION is available for publishing"
 
       # Step 11: Generate or update Helm repository index
       - name: Generate repository index
         run: |
           REPO_URL="https://iklobato.github.io/pylight/charts"
-          if ! helm repo index ./charts-dist --url "$REPO_URL" --merge existing-index.yaml; then
-            echo "Error: Failed to generate repository index"
-            exit 1
+          
+          # Check if existing-index.yaml exists and is valid
+          if [ -f existing-index.yaml ] && [ -s existing-index.yaml ]; then
+            # Validate it's proper YAML before merging
+            if python3 -c "import yaml; yaml.safe_load(open('existing-index.yaml'))" 2>/dev/null; then
+              echo "Merging with existing index..."
+              if ! helm repo index ./charts-dist --url "$REPO_URL" --merge existing-index.yaml; then
+                echo "Error: Failed to generate repository index with merge"
+                exit 1
+              fi
+            else
+              echo "Existing index is invalid, creating new index..."
+              if ! helm repo index ./charts-dist --url "$REPO_URL"; then
+                echo "Error: Failed to generate repository index"
+                exit 1
+              fi
+            fi
+          else
+            echo "No existing index, creating new one..."
+            if ! helm repo index ./charts-dist --url "$REPO_URL"; then
+              echo "Error: Failed to generate repository index"
+              exit 1
+            fi
           fi
+          
           echo "✓ Repository index generated successfully"
 
       # Step 12: Deploy chart package and index to GitHub Pages

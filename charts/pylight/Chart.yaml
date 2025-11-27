@@ -18,4 +18,3 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - Initial release of Helm chart for Pylight
-

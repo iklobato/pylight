@@ -114,17 +114,44 @@ jobs:
         run: |
           mkdir -p charts-dist
           CHART_DIR="charts/pylight"
+          CHART_FILE="$CHART_DIR/Chart.yaml"
           
-          # Verify Chart.yaml exists before packaging
-          if [ ! -f "$CHART_DIR/Chart.yaml" ]; then
-            echo "Error: Chart.yaml not found at $CHART_DIR/Chart.yaml"
+          # Debug: Show current directory and verify Chart.yaml exists
+          echo "Current directory: $(pwd)"
+          echo "Chart directory: $CHART_DIR"
+          echo ""
+          echo "Listing chart directory:"
+          ls -la "$CHART_DIR/" || true
+          echo ""
+          
+          # Verify Chart.yaml exists and is readable
+          if [ ! -f "$CHART_FILE" ]; then
+            echo "Error: Chart.yaml not found at $CHART_FILE"
+            echo "Files in chart directory:"
+            find "$CHART_DIR" -type f || true
             exit 1
           fi
           
+          echo "✓ Chart.yaml found"
+          echo "Chart.yaml content:"
+          cat "$CHART_FILE"
+          echo ""
+          
+          # Verify it's valid YAML
+          if ! python3 -c "import yaml; yaml.safe_load(open('$CHART_FILE'))" 2>/dev/null; then
+            echo "Error: Chart.yaml is not valid YAML"
+            exit 1
+          fi
+          echo "✓ Chart.yaml is valid YAML"
+          echo ""
+          
           # Package the chart (this will also validate the chart structure)
+          echo "Packaging chart from: $CHART_DIR"
           if ! helm package "$CHART_DIR" --destination ./charts-dist; then
             echo "Error: Helm chart packaging failed"
-            exit 1
+            echo "Trying with absolute path..."
+            ABS_CHART_DIR="$(cd "$CHART_DIR" && pwd)"
+            helm package "$ABS_CHART_DIR" --destination "$(pwd)/charts-dist" || exit 1
           fi
           echo "✓ Helm chart packaged successfully"
 

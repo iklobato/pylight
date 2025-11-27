@@ -195,21 +195,23 @@ jobs:
           
           # Try to merge with existing index, but fall back to new index if merge fails
           if [ -f existing-index.yaml ] && [ -s existing-index.yaml ]; then
-            # Check if it looks like a valid Helm index file (has 'apiVersion' and 'entries' keys)
-            if grep -q "apiVersion:" existing-index.yaml && grep -q "entries:" existing-index.yaml; then
+            # Validate it's proper YAML and has expected Helm index structure
+            if python3 -c "import yaml; data = yaml.safe_load(open('existing-index.yaml')); assert isinstance(data, dict) and 'apiVersion' in data and 'entries' in data" 2>/dev/null; then
               echo "Attempting to merge with existing index..."
               # Try merge, but don't fail if it doesn't work - we'll create new index instead
               if helm repo index ./charts-dist --url "$REPO_URL" --merge existing-index.yaml 2>/dev/null; then
                 echo "✓ Successfully merged with existing index"
               else
-                echo "Warning: Failed to merge with existing index, creating new index..."
+                echo "Warning: Failed to merge with existing index (file may be corrupted), creating new index..."
+                rm -f existing-index.yaml
                 if ! helm repo index ./charts-dist --url "$REPO_URL"; then
                   echo "Error: Failed to generate repository index"
                   exit 1
                 fi
               fi
             else
-              echo "Existing index doesn't have expected Helm format, creating new index..."
+              echo "Existing index is invalid or corrupted, creating new index..."
+              rm -f existing-index.yaml
               if ! helm repo index ./charts-dist --url "$REPO_URL"; then
                 echo "Error: Failed to generate repository index"
                 exit 1

@@ -1,9 +1,19 @@
 {{- if .Values.config.createConfigMap }}
 {{- if not .Values.config.existingConfigMap }}
-{{- $config := .Values.config.inline }}
+{{- $config := .Values.config.inline | default dict }}
 {{- if .Values.database.connectionString }}
 {{- $dbConfig := dict "url" .Values.database.connectionString }}
 {{- $config = merge (dict "database" $dbConfig) $config }}
+{{- else }}
+{{- if not $config.database }}
+{{- $config = merge (dict "database" (dict "url" "")) $config }}
+{{- end }}
+{{- end }}
+{{- if not $config.swagger }}
+{{- $config = merge (dict "swagger" (dict "title" "Pylight API" "version" "1.0.0")) $config }}
+{{- end }}
+{{- if not $config.tables }}
+{{- $config = merge (dict "tables" list) $config }}
 {{- end }}
 apiVersion: v1
 kind: ConfigMap

@@ -19,8 +19,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ include "pylight.configMapHash" . }}
-        checksum/secret: {{ include "pylight.secretHash" . }}
+        checksum/config: {{ include "pylight.configMapHash" . | quote }}
+        checksum/secret: {{ include "pylight.secretHash" . | quote }}
       labels:
         {{- include "pylight.selectorLabels" . | nindent 8 }}
     spec:

@@ -130,25 +130,34 @@ jobs:
             exit 1
           fi
           
-          # Change to chart directory and package from there
-          # This avoids Helm's subdirectory processing issues
-          cd "$CHART_DIR"
+          # Create a temporary clean copy of the chart to avoid any path/subdirectory issues
+          TEMP_CHART_DIR="/tmp/pylight-chart-$$"
+          mkdir -p "$TEMP_CHART_DIR"
           
-          # Verify Chart.yaml is accessible from chart directory
-          if [ ! -f "Chart.yaml" ]; then
-            echo "Error: Chart.yaml not found in chart directory"
+          # Copy entire chart directory to temp location
+          cp -r "$CHART_DIR"/* "$TEMP_CHART_DIR/"
+          
+          # Verify Chart.yaml exists in temp location
+          if [ ! -f "$TEMP_CHART_DIR/Chart.yaml" ]; then
+            echo "Error: Chart.yaml not found in temp chart directory"
             exit 1
           fi
           
-          # Package from current directory (chart root)
-          # Use absolute path for destination to ensure it's outside the chart directory
+          # Package from temp directory
+          cd "$TEMP_CHART_DIR"
           ABS_DEST="$(cd "${{ github.workspace }}/charts-dist" && pwd)"
+          
           if ! helm package . --destination "$ABS_DEST"; then
             echo "Error: Helm chart packaging failed"
+            # Cleanup
+            rm -rf "$TEMP_CHART_DIR"
             exit 1
           fi
           
           echo "✓ Helm chart packaged successfully"
+          
+          # Cleanup temp directory
+          rm -rf "$TEMP_CHART_DIR"
           
           # Return to workspace root
           cd "${{ github.workspace }}"

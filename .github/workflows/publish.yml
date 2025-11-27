@@ -91,27 +91,45 @@ jobs:
       # Step 9: Validate Helm chart before packaging
       - name: Validate Helm chart
         run: |
-          # Verify Chart.yaml exists
+          # Debug: List chart directory structure
+          echo "Chart directory contents:"
+          ls -la charts/pylight/ || true
+          echo ""
+          
+          # Verify Chart.yaml exists and is readable
           if [ ! -f charts/pylight/Chart.yaml ]; then
-            echo "Error: Chart.yaml file not found"
+            echo "Error: Chart.yaml file not found at charts/pylight/Chart.yaml"
             exit 1
           fi
           echo "✓ Chart.yaml found"
+          cat charts/pylight/Chart.yaml | head -5
+          echo ""
           
-          # Use helm template to validate chart structure
-          if ! helm template test-release charts/pylight > /dev/null 2>&1; then
+          # Use helm template to validate chart structure (this is the real validation)
+          echo "Validating chart with helm template..."
+          if ! helm template test-release charts/pylight > /tmp/helm-output.yaml 2>&1; then
             echo "Error: Helm chart template validation failed"
-            helm template test-release charts/pylight
+            cat /tmp/helm-output.yaml
             exit 1
           fi
           echo "✓ Helm chart template validation passed"
           
-          # Run lint but ignore known false positives
-          # Some Helm versions report "templates/: Chart.yaml file is missing" incorrectly
+          # Run lint for additional checks (non-blocking due to known false positives)
+          echo "Running helm lint (non-blocking)..."
           set +e
-          helm lint charts/pylight 2>&1 | grep -v "templates/: Chart.yaml file is missing" | grep -v "unable to load chart" || true
+          LINT_OUTPUT=$(helm lint charts/pylight 2>&1)
+          LINT_EXIT=$?
           set -e
-          echo "✓ Helm chart validation completed"
+          
+          # Filter out known false positive errors
+          FILTERED_OUTPUT=$(echo "$LINT_OUTPUT" | grep -v "templates/: Chart.yaml file is missing" | grep -v "unable to load chart" || true)
+          
+          if [ $LINT_EXIT -eq 0 ] || [ -z "$FILTERED_OUTPUT" ]; then
+            echo "✓ Helm lint passed (or only false positives)"
+          else
+            echo "Helm lint warnings (non-blocking):"
+            echo "$FILTERED_OUTPUT"
+          fi
 
       # Step 10: Package Helm chart into .tgz archive
       - name: Package Helm chart

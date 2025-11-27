@@ -77,6 +77,13 @@ class LightApi:
             exception_handlers={Exception: handleError},
         )
 
+        # Add health check endpoint
+        async def healthHandler(request):
+            """Handle health check requests."""
+            return JSONResponse({"status": "healthy"})
+
+        self.starletteApp.routes.append(Route("/health", healthHandler, methods=["GET"]))
+
         self._initializePlugins()
 
     @classmethod

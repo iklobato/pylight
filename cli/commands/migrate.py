@@ -1,6 +1,6 @@
 """CLI migrate command for database schema management."""
 
-import click_compat as click
+from cli import click_compat as click
 from src.infrastructure.database.migrations import MigrationManager
 
 

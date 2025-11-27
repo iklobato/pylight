@@ -1,0 +1,18 @@
+{{- if .Values.config.createConfigMap }}
+{{- if not .Values.config.existingConfigMap }}
+{{- $config := .Values.config.inline }}
+{{- if .Values.database.connectionString }}
+{{- $dbConfig := dict "url" .Values.database.connectionString }}
+{{- $config = merge (dict "database" $dbConfig) $config }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "pylight.configMapName" . }}
+  labels:
+    {{- include "pylight.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+{{- toYaml $config | nindent 4 }}
+{{- end }}
+{{- end }}

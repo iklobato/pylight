@@ -1,0 +1,19 @@
+# Basic example - minimal configuration
+image:
+  repository: pylight/pylight
+  tag: "latest"
+
+database:
+  createSecret: true  # Simplified configuration: always create Secret
+  connectionString: "postgresql://user:password@db-host:5432/mydb"
+
+config:
+  createConfigMap: true  # Simplified configuration: always create ConfigMap
+  inline:
+    swagger:
+      title: "My API"
+      version: "1.0.0"
+    tables:
+      - name: "products"
+      - name: "users"
+

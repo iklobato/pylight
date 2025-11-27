@@ -86,6 +86,7 @@ class YAMLParser:
                 return None
 
             if currentIndent > indent:
+                self.lineNumber = self.currentLine
                 self._raiseError(f"Unexpected indentation at line {self.lineNumber + 1}")
 
             if stripped.startswith("-"):
@@ -117,6 +118,7 @@ class YAMLParser:
                 if currentIndent < indent:
                     break
                 if currentIndent > indent:
+                    self.lineNumber = self.currentLine
                     self._raiseError(f"Unexpected indentation at line {self.lineNumber + 1}")
 
                 if ":" not in stripped:
@@ -127,7 +129,7 @@ class YAMLParser:
                 valueStr = keyValue[1].strip() if len(keyValue) > 1 else ""
 
                 if not key:
-                    self._raiseError(f"Empty key at line {self.lineNumber + 1}")
+                    self._raiseError(f"Empty key at line {self.currentLine + 1}")
 
                 self.lineNumber = self.currentLine
                 self.currentLine += 1
@@ -135,12 +137,29 @@ class YAMLParser:
                 if valueStr:
                     value = self._parseScalarValue(valueStr)
                 else:
-                    nextValue = self._parseValue(indent + 2)
-                    if nextValue is None:
-                        value = None
+                    # Parse nested value at increased indentation
+                    # First check if next line is a list at same or next indentation level
+                    if self.currentLine < len(self.lines):
+                        nextLine = self.lines[self.currentLine]
+                        nextStripped = nextLine.lstrip()
+                        nextIndent = len(nextLine) - len(nextStripped)
+                        
+                        # If next line is a list item at same or greater indentation, parse as list
+                        if nextStripped.startswith("-"):
+                            if nextIndent >= indent:
+                                value = self._parseList(indent)
+                            else:
+                                value = None
+                        else:
+                            # Parse nested value at increased indentation
+                            nextValue = self._parseValue(indent + 2)
+                            if nextValue is None:
+                                value = None
+                            else:
+                                value = nextValue
+                                # Don't decrement - _parseValue already advanced currentLine
                     else:
-                        value = nextValue
-                        self.currentLine -= 1
+                        value = None
 
                 result[key] = value
 
@@ -179,13 +198,21 @@ class YAMLParser:
                 self.currentLine += 1
 
                 if itemStr:
-                    item = self._parseScalarValue(itemStr)
+                    # Check if itemStr looks like a key-value pair (e.g., "name: products")
+                    if ":" in itemStr:
+                        # Parse as a dictionary
+                        keyValue = itemStr.split(":", 1)
+                        key = keyValue[0].strip()
+                        valueStr = keyValue[1].strip() if len(keyValue) > 1 else ""
+                        value = self._parseScalarValue(valueStr) if valueStr else None
+                        item = {key: value}
+                    else:
+                        item = self._parseScalarValue(itemStr)
                 else:
                     item = self._parseValue(indent + 2)
                     if item is None:
                         item = None
-                    else:
-                        self.currentLine -= 1
+                    # Don't decrement - _parseValue already advanced currentLine
 
                 result.append(item)
 

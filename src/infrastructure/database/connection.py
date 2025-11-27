@@ -82,8 +82,12 @@ class DatabaseManager:
                 self.engine, class_=AsyncSession, expire_on_commit=False
             )
         else:
-            self.databaseUrl = databaseUrl
-            self.engine = create_engine(databaseUrl, echo=False)
+            # Convert to psycopg2 URL for sync operations
+            syncUrl = databaseUrl
+            if syncUrl.startswith("postgresql://") or syncUrl.startswith("postgres://"):
+                syncUrl = syncUrl.replace("postgresql://", "postgresql+psycopg2://", 1).replace("postgres://", "postgresql+psycopg2://", 1)
+            self.databaseUrl = syncUrl
+            self.engine = create_engine(syncUrl, echo=False)
             self.sessionMaker = sessionmaker(self.engine, expire_on_commit=False)
 
     async def getSession(self) -> AsyncSession:

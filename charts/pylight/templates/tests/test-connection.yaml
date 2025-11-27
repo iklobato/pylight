@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "pylight.fullname" . }}-test-connection"
+  labels:
+    {{- include "pylight.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  containers:
+  - name: test-connection
+    image: curlimages/curl:latest
+    command: ['sh', '-c']
+    args:
+      - |
+        echo "Testing API connection..."
+        SERVICE_NAME="{{ include "pylight.fullname" . }}-service"
+        SERVICE_PORT={{ .Values.service.port }}
+        MAX_RETRIES=30
+        RETRY_COUNT=0
+        
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          if curl -f -s http://${SERVICE_NAME}:${SERVICE_PORT}/health > /dev/null; then
+            echo "✓ Health check passed"
+            exit 0
+          fi
+          echo "Waiting for API to be ready... (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
+          sleep 2
+          RETRY_COUNT=$((RETRY_COUNT + 1))
+        done
+        
+        echo "✗ Health check failed after $MAX_RETRIES attempts"
+        exit 1
+  restartPolicy: Never
+

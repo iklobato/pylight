@@ -1,0 +1,29 @@
+# Test values for scaling testing
+image:
+  repository: pylight/pylight
+  tag: "latest"
+
+database:
+  createSecret: true  # Use simplified configuration
+  connectionString: "postgresql://postgres:postgres@host.docker.internal:5432/testdb"
+
+config:
+  createConfigMap: true  # Use simplified configuration
+  inline:
+    swagger:
+      title: "Test API"
+      version: "1.0.0"
+    tables:
+      - name: "products"
+
+# Start with 1 replica, will be scaled to 3
+replicaCount: 1
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+

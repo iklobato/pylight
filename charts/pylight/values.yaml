@@ -1,0 +1,69 @@
+# Default values for Pylight Helm chart
+# This is a YAML representation of the values that can be passed to the chart
+
+# Container image configuration
+image:
+  repository: pylight/pylight
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Database connection configuration
+# Either provide connectionString inline OR reference existingSecret
+database:
+  createSecret: true  # Whether to create Secret (default: true)
+  # connectionString: "postgresql://user:password@host:port/database"  # Inline connection string
+  # existingSecret: "my-db-secret"  # Name of existing Kubernetes Secret (overrides createSecret)
+  # secretKey: "connection-string"  # Key in secret (default: "connection-string")
+
+# API configuration file
+# Either provide inline YAML config OR reference existingConfigMap
+config:
+  createConfigMap: true  # Whether to create ConfigMap (default: true)
+  # inline:  # Inline YAML configuration object
+  #   database:
+  #     url: "postgresql://user:password@host:port/database"
+  #   swagger:
+  #     title: "Pylight API"
+  #     version: "1.0.0"
+  #   tables:
+  #     - name: "products"
+  # existingConfigMap: "my-api-config"  # Name of existing Kubernetes ConfigMap (overrides createConfigMap)
+  # key: "config.yaml"  # Key in ConfigMap (default: "config.yaml")
+
+# Number of API pod replicas
+replicaCount: 1
+
+# Resource requests and limits
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# Kubernetes Service configuration
+service:
+  port: 8000
+  type: ClusterIP
+
+# Deployment strategy configuration
+deployment:
+  strategy:
+    type: RollingUpdate
+    maxSurge: 1
+    maxUnavailable: 0
+
+# Health check probe configuration
+healthCheck:
+  livenessProbe:
+    enabled: true
+    path: "/health"
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    enabled: true
+    path: "/health"
+    initialDelaySeconds: 10
+    periodSeconds: 5
+

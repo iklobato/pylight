@@ -1,7 +1,7 @@
 """CLI start command for YAML-driven API startup."""
 
 import os
-import click_compat as click
+from cli import click_compat as click
 
 from src.presentation.app import LightApi
 from src.domain.errors import ConfigurationError, ReflectionError

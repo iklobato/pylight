@@ -1,0 +1,11 @@
+database:
+  connectionString: "postgresql://user:pass@host:5432/db"
+
+config:
+  inline:
+    swagger:
+      title: "Test API"
+      version: "1.0.0"
+    tables:
+      - name: "products"
+

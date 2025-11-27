@@ -1,0 +1,249 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pylight Helm Chart Values",
+  "description": "Schema for Pylight Helm chart values.yaml",
+  "type": "object",
+  "required": [],
+  "properties": {
+    "image": {
+      "type": "object",
+      "description": "Container image configuration",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Container image repository",
+          "default": "pylight/pylight"
+        },
+        "tag": {
+          "type": "string",
+          "description": "Container image tag",
+          "default": "latest"
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"],
+          "description": "Image pull policy",
+          "default": "IfNotPresent"
+        }
+      },
+      "required": ["repository"]
+    },
+    "database": {
+      "description": "Database connection configuration",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "properties": {
+            "connectionString": {
+              "type": "string",
+              "description": "Inline database connection string"
+            }
+          },
+          "required": ["connectionString"]
+        },
+        {
+          "properties": {
+            "existingSecret": {
+              "type": "string",
+              "description": "Name of existing Kubernetes Secret"
+            },
+            "secretKey": {
+              "type": "string",
+              "description": "Key in secret containing connection string",
+              "default": "connection-string"
+            }
+          },
+          "required": ["existingSecret"]
+        }
+      ]
+    },
+    "config": {
+      "description": "API configuration file",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "properties": {
+            "inline": {
+              "type": "object",
+              "description": "Inline YAML configuration object"
+            }
+          },
+          "required": ["inline"]
+        },
+        {
+          "properties": {
+            "existingConfigMap": {
+              "type": "string",
+              "description": "Name of existing Kubernetes ConfigMap"
+            },
+            "key": {
+              "type": "string",
+              "description": "Key in ConfigMap containing config file",
+              "default": "config.yaml"
+            }
+          },
+          "required": ["existingConfigMap"]
+        }
+      ]
+    },
+    "replicaCount": {
+      "type": "integer",
+      "description": "Number of API pod replicas",
+      "minimum": 1,
+      "default": 1
+    },
+    "resources": {
+      "type": "object",
+      "description": "Resource requests and limits",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "memory": {
+              "type": "string",
+              "description": "Memory request",
+              "default": "256Mi"
+            },
+            "cpu": {
+              "type": "string",
+              "description": "CPU request",
+              "default": "100m"
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "memory": {
+              "type": "string",
+              "description": "Memory limit",
+              "default": "512Mi"
+            },
+            "cpu": {
+              "type": "string",
+              "description": "CPU limit",
+              "default": "500m"
+            }
+          }
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "description": "Kubernetes Service configuration",
+      "properties": {
+        "port": {
+          "type": "integer",
+          "description": "Service port",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 8000
+        },
+        "type": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+          "description": "Service type",
+          "default": "ClusterIP"
+        }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "description": "Deployment strategy configuration",
+      "properties": {
+        "strategy": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["RollingUpdate", "Recreate"],
+              "description": "Deployment strategy type",
+              "default": "RollingUpdate"
+            },
+            "maxSurge": {
+              "oneOf": [
+                {"type": "integer"},
+                {"type": "string"}
+              ],
+              "description": "Maximum number of pods that can be created over desired replicas",
+              "default": 1
+            },
+            "maxUnavailable": {
+              "oneOf": [
+                {"type": "integer"},
+                {"type": "string"}
+              ],
+              "description": "Maximum number of pods that can be unavailable during update",
+              "default": 0
+            }
+          }
+        }
+      }
+    },
+    "healthCheck": {
+      "type": "object",
+      "description": "Health check probe configuration",
+      "properties": {
+        "livenessProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable liveness probe",
+              "default": true
+            },
+            "path": {
+              "type": "string",
+              "description": "Liveness probe HTTP path",
+              "default": "/health"
+            },
+            "initialDelaySeconds": {
+              "type": "integer",
+              "description": "Initial delay before first probe",
+              "minimum": 0,
+              "default": 30
+            },
+            "periodSeconds": {
+              "type": "integer",
+              "description": "Probe period",
+              "minimum": 1,
+              "default": 10
+            }
+          }
+        },
+        "readinessProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable readiness probe",
+              "default": true
+            },
+            "path": {
+              "type": "string",
+              "description": "Readiness probe HTTP path",
+              "default": "/health"
+            },
+            "initialDelaySeconds": {
+              "type": "integer",
+              "description": "Initial delay before first probe",
+              "minimum": 0,
+              "default": 10
+            },
+            "periodSeconds": {
+              "type": "integer",
+              "description": "Probe period",
+              "minimum": 1,
+              "default": 5
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

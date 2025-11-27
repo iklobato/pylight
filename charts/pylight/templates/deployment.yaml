@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pylight.fullname" . }}
+  labels:
+    {{- include "pylight.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: {{ .Values.deployment.strategy.type }}
+    {{- if eq .Values.deployment.strategy.type "RollingUpdate" }}
+    rollingUpdate:
+      maxSurge: {{ .Values.deployment.strategy.maxSurge }}
+      maxUnavailable: {{ .Values.deployment.strategy.maxUnavailable }}
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "pylight.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "pylight.configMapHash" . }}
+        checksum/secret: {{ include "pylight.secretHash" . }}
+      labels:
+        {{- include "pylight.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.port }}
+          protocol: TCP
+        {{- if .Values.config.inline }}
+        command: ["pylight"]
+        args: ["start", "--config", "/etc/pylight/config.yaml", "--host", "0.0.0.0", "--port", "8000"]
+        {{- else if .Values.config.existingConfigMap }}
+        command: ["pylight"]
+        args: ["start", "--config", "/etc/pylight/{{ .Values.config.key | default "config.yaml" }}", "--host", "0.0.0.0", "--port", "8000"]
+        {{- end }}
+        {{- if .Values.config.inline }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/pylight
+          readOnly: true
+        {{- else if .Values.config.existingConfigMap }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/pylight
+          readOnly: true
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- if .Values.healthCheck.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.healthCheck.livenessProbe.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.healthCheck.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.healthCheck.livenessProbe.periodSeconds }}
+        {{- end }}
+        {{- if .Values.healthCheck.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.healthCheck.readinessProbe.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.healthCheck.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.healthCheck.readinessProbe.periodSeconds }}
+        {{- end }}
+      {{- if .Values.config.inline }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "pylight.fullname" . }}-configmap
+      {{- else if .Values.config.existingConfigMap }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.config.existingConfigMap }}
+      {{- end }}
+

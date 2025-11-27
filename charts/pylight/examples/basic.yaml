@@ -1,0 +1,17 @@
+# Basic example - minimal configuration
+image:
+  repository: pylight/pylight
+  tag: "latest"
+
+database:
+  connectionString: "postgresql://user:password@db-host:5432/mydb"
+
+config:
+  inline:
+    swagger:
+      title: "My API"
+      version: "1.0.0"
+    tables:
+      - name: "products"
+      - name: "users"
+

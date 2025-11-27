@@ -1,0 +1,25 @@
+# Example using existing Kubernetes Secrets and ConfigMaps
+image:
+  repository: pylight/pylight
+  tag: "latest"
+
+# Use existing Secret for database connection
+database:
+  existingSecret: "my-database-secret"
+  secretKey: "connection-string"
+
+# Use existing ConfigMap for API configuration
+config:
+  existingConfigMap: "my-api-config"
+  key: "config.yaml"
+
+replicaCount: 2
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+

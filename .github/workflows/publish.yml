@@ -80,13 +80,34 @@ jobs:
       - name: Update Chart.yaml version
         run: |
           VERSION="${{ github.ref_name }}"
+          CHART_FILE="charts/pylight/Chart.yaml"
+          
+          # Verify file exists before update
+          if [ ! -f "$CHART_FILE" ]; then
+            echo "Error: Chart.yaml not found at $CHART_FILE"
+            exit 1
+          fi
+          
           # Use yq if available, otherwise use sed
           if command -v yq &> /dev/null; then
-            yq eval ".version = \"$VERSION\"" -i charts/pylight/Chart.yaml
+            yq eval ".version = \"$VERSION\"" -i "$CHART_FILE"
           else
-            sed -i "s/^version:.*/version: $VERSION/" charts/pylight/Chart.yaml
+            # Use sed with backup and verify it worked
+            sed -i.bak "s/^version:.*/version: $VERSION/" "$CHART_FILE"
+            rm -f "$CHART_FILE.bak"
           fi
+          
+          # Verify the update worked
+          if ! grep -q "^version: $VERSION" "$CHART_FILE"; then
+            echo "Error: Failed to update Chart.yaml version to $VERSION"
+            echo "Current Chart.yaml content:"
+            cat "$CHART_FILE"
+            exit 1
+          fi
+          
           echo "✓ Updated Chart.yaml version to $VERSION"
+          echo "Chart.yaml version line:"
+          grep "^version:" "$CHART_FILE"
 
       # Step 9: Validate Helm chart before packaging
       - name: Validate Helm chart

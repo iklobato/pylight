@@ -63,7 +63,8 @@ Create the name of the service account to use
 Generate ConfigMap hash for pod restart on config change
 */}}
 {{- define "pylight.configMapHash" -}}
-{{- if .Values.config.inline }}
+{{- if .Values.config.createConfigMap }}
+{{- if not .Values.config.existingConfigMap }}
 {{- $config := .Values.config.inline }}
 {{- if .Values.database.connectionString }}
 {{- $dbConfig := dict "url" .Values.database.connectionString }}
@@ -73,16 +74,60 @@ Generate ConfigMap hash for pod restart on config change
 {{- else }}
 {{- "existing" }}
 {{- end }}
+{{- else }}
+{{- "existing" }}
+{{- end }}
 {{- end }}
 
 {{/*
 Generate Secret hash for pod restart on secret change
 */}}
 {{- define "pylight.secretHash" -}}
+{{- if .Values.database.createSecret }}
+{{- if not .Values.database.existingSecret }}
 {{- if .Values.database.connectionString }}
 {{- .Values.database.connectionString | sha256sum | trunc 8 }}
 {{- else }}
 {{- "existing" }}
+{{- end }}
+{{- else }}
+{{- "existing" }}
+{{- end }}
+{{- else }}
+{{- "existing" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Determine config file path based on configuration approach
+*/}}
+{{- define "pylight.configPath" -}}
+{{- if .Values.config.existingConfigMap }}
+{{- printf "/etc/pylight/%s" (.Values.config.key | default "config.yaml") }}
+{{- else }}
+{{- "/etc/pylight/config.yaml" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Determine ConfigMap name (created vs existing)
+*/}}
+{{- define "pylight.configMapName" -}}
+{{- if .Values.config.existingConfigMap }}
+{{- .Values.config.existingConfigMap }}
+{{- else }}
+{{- printf "%s-configmap" (include "pylight.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Determine Secret name (created vs existing)
+*/}}
+{{- define "pylight.secretName" -}}
+{{- if .Values.database.existingSecret }}
+{{- .Values.database.existingSecret }}
+{{- else }}
+{{- printf "%s-secret" (include "pylight.fullname" .) }}
 {{- end }}
 {{- end }}
 

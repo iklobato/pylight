@@ -8,10 +8,12 @@ image:
 
 # Database connection - uses host.docker.internal to access localhost PostgreSQL from minikube
 database:
+  createSecret: true  # Use simplified configuration
   connectionString: "postgresql://postgres:postgres@host.docker.internal:5432/testdb"
 
 # Minimal API configuration for testing
 config:
+  createConfigMap: true  # Use simplified configuration
   inline:
     swagger:
       title: "Pylight Test API"

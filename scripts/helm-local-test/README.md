@@ -12,6 +12,61 @@ This directory contains scripts for deploying and testing the Pylight Helm chart
 
 ## Scripts
 
+### `run-all-tests.sh` ⭐ **Recommended**
+
+Orchestrate the complete testing workflow with a single command. This script runs all test phases sequentially: deployment, validation, scaling, upgrade, and cleanup.
+
+```bash
+# Run complete test suite
+./scripts/helm-local-test/run-all-tests.sh
+
+# Custom release name and values file
+./scripts/helm-local-test/run-all-tests.sh -r my-release -f custom-values.yaml
+
+# Skip specific phases
+./scripts/helm-local-test/run-all-tests.sh --skip-scaling --skip-upgrade
+
+# Non-interactive mode for CI/CD
+./scripts/helm-local-test/run-all-tests.sh --non-interactive
+
+# Debug mode for verbose output
+./scripts/helm-local-test/run-all-tests.sh --debug
+```
+
+**Options:**
+- `-r, --release NAME`: Helm release name (default: `pylight-test`)
+- `-f, --values FILE`: Path to values file (default: `test-values.yaml`)
+- `-n, --namespace NAME`: Kubernetes namespace (default: `default`)
+- `--skip-scaling`: Skip scaling tests
+- `--skip-upgrade`: Skip upgrade tests
+- `--skip-cleanup`: Skip cleanup (keep resources for inspection)
+- `--debug`: Enable debug output
+- `--non-interactive`: Non-interactive mode for CI/CD
+- `-h, --help`: Show help message
+
+**Exit Codes:**
+- `0`: Success - all test phases passed
+- `1`: General error
+- `2`: Prerequisite failure (minikube, PostgreSQL, etc.)
+- `3`: Timeout
+- `4`: Validation failure
+
+**Test Phases:**
+1. **Prerequisites**: Validates minikube, PostgreSQL, Redis (optional), and required tools
+2. **Deployment**: Deploys Helm chart using provided values file
+3. **Validation**: Validates deployment, health endpoints, API endpoints, and database connectivity
+4. **Scaling**: Tests horizontal scaling from 1 to 5 replicas with validation at each step
+5. **Upgrade**: Tests Helm upgrade with configuration changes and rolling update behavior
+6. **Cleanup**: Removes all test resources (unless `--skip-cleanup` is used)
+
+**Log Preservation:**
+On any test failure, diagnostic information is automatically preserved to `scripts/helm-local-test/logs/{release-name}_{timestamp}/`:
+- Pod logs and descriptions
+- Kubernetes resource state
+- ConfigMaps and Secrets
+- Events
+- Helm release status and values
+
 ### `deploy.sh`
 
 Deploy the Helm chart to minikube cluster.

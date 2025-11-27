@@ -32,24 +32,12 @@ spec:
         - name: http
           containerPort: {{ .Values.service.port }}
           protocol: TCP
-        {{- if .Values.config.inline }}
         command: ["pylight"]
-        args: ["start", "--config", "/etc/pylight/config.yaml", "--host", "0.0.0.0", "--port", "8000"]
-        {{- else if .Values.config.existingConfigMap }}
-        command: ["pylight"]
-        args: ["start", "--config", "/etc/pylight/{{ .Values.config.key | default "config.yaml" }}", "--host", "0.0.0.0", "--port", "8000"]
-        {{- end }}
-        {{- if .Values.config.inline }}
+        args: ["start", "--config", {{ include "pylight.configPath" . | quote }}, "--host", "0.0.0.0", "--port", "8000"]
         volumeMounts:
         - name: config
           mountPath: /etc/pylight
           readOnly: true
-        {{- else if .Values.config.existingConfigMap }}
-        volumeMounts:
-        - name: config
-          mountPath: /etc/pylight
-          readOnly: true
-        {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         {{- if .Values.healthCheck.livenessProbe.enabled }}
@@ -68,15 +56,8 @@ spec:
           initialDelaySeconds: {{ .Values.healthCheck.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.healthCheck.readinessProbe.periodSeconds }}
         {{- end }}
-      {{- if .Values.config.inline }}
       volumes:
       - name: config
         configMap:
-          name: {{ include "pylight.fullname" . }}-configmap
-      {{- else if .Values.config.existingConfigMap }}
-      volumes:
-      - name: config
-        configMap:
-          name: {{ .Values.config.existingConfigMap }}
-      {{- end }}
+          name: {{ include "pylight.configMapName" . }}
 

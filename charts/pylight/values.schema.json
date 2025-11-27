@@ -30,65 +30,51 @@
     },
     "database": {
       "description": "Database connection configuration",
-      "oneOf": [
-        {
-          "type": "null"
+      "type": "object",
+      "properties": {
+        "createSecret": {
+          "type": "boolean",
+          "description": "Whether to create Secret",
+          "default": true
         },
-        {
-          "properties": {
-            "connectionString": {
-              "type": "string",
-              "description": "Inline database connection string"
-            }
-          },
-          "required": ["connectionString"]
+        "connectionString": {
+          "type": "string",
+          "description": "Inline database connection string"
         },
-        {
-          "properties": {
-            "existingSecret": {
-              "type": "string",
-              "description": "Name of existing Kubernetes Secret"
-            },
-            "secretKey": {
-              "type": "string",
-              "description": "Key in secret containing connection string",
-              "default": "connection-string"
-            }
-          },
-          "required": ["existingSecret"]
+        "existingSecret": {
+          "type": "string",
+          "description": "Name of existing Kubernetes Secret (overrides createSecret)"
+        },
+        "secretKey": {
+          "type": "string",
+          "description": "Key in secret containing connection string",
+          "default": "connection-string"
         }
-      ]
+      }
     },
     "config": {
       "description": "API configuration file",
-      "oneOf": [
-        {
-          "type": "null"
+      "type": "object",
+      "properties": {
+        "createConfigMap": {
+          "type": "boolean",
+          "description": "Whether to create ConfigMap",
+          "default": true
         },
-        {
-          "properties": {
-            "inline": {
-              "type": "object",
-              "description": "Inline YAML configuration object"
-            }
-          },
-          "required": ["inline"]
+        "inline": {
+          "type": "object",
+          "description": "Inline YAML configuration object"
         },
-        {
-          "properties": {
-            "existingConfigMap": {
-              "type": "string",
-              "description": "Name of existing Kubernetes ConfigMap"
-            },
-            "key": {
-              "type": "string",
-              "description": "Key in ConfigMap containing config file",
-              "default": "config.yaml"
-            }
-          },
-          "required": ["existingConfigMap"]
+        "existingConfigMap": {
+          "type": "string",
+          "description": "Name of existing Kubernetes ConfigMap (overrides createConfigMap)"
+        },
+        "key": {
+          "type": "string",
+          "description": "Key in ConfigMap containing config file",
+          "default": "config.yaml"
         }
-      ]
+      }
     },
     "replicaCount": {
       "type": "integer",

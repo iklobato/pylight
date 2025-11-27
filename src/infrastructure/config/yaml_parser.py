@@ -138,12 +138,28 @@ class YAMLParser:
                     value = self._parseScalarValue(valueStr)
                 else:
                     # Parse nested value at increased indentation
-                    nextValue = self._parseValue(indent + 2)
-                    if nextValue is None:
-                        value = None
+                    # First check if next line is a list at same or next indentation level
+                    if self.currentLine < len(self.lines):
+                        nextLine = self.lines[self.currentLine]
+                        nextStripped = nextLine.lstrip()
+                        nextIndent = len(nextLine) - len(nextStripped)
+                        
+                        # If next line is a list item at same or greater indentation, parse as list
+                        if nextStripped.startswith("-"):
+                            if nextIndent >= indent:
+                                value = self._parseList(indent)
+                            else:
+                                value = None
+                        else:
+                            # Parse nested value at increased indentation
+                            nextValue = self._parseValue(indent + 2)
+                            if nextValue is None:
+                                value = None
+                            else:
+                                value = nextValue
+                                # Don't decrement - _parseValue already advanced currentLine
                     else:
-                        value = nextValue
-                        # Don't decrement - _parseValue already advanced currentLine
+                        value = None
 
                 result[key] = value
 

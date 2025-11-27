@@ -1,21 +1,21 @@
-# Example using existing Kubernetes Secrets and ConfigMaps
+# Test fixture values for existing resources configuration
 image:
   repository: pylight/pylight
   tag: "latest"
 
 # Use existing Secret for database connection
 database:
-  createSecret: false  # Use existing Secret (overrides createSecret)
+  createSecret: false  # Use existing Secret
   existingSecret: "my-database-secret"
   secretKey: "connection-string"
 
 # Use existing ConfigMap for API configuration
 config:
-  createConfigMap: false  # Use existing ConfigMap (overrides createConfigMap)
+  createConfigMap: false  # Use existing ConfigMap
   existingConfigMap: "my-api-config"
   key: "config.yaml"
 
-replicaCount: 2
+replicaCount: 1
 
 resources:
   requests:

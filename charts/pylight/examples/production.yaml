@@ -5,9 +5,11 @@ image:
   pullPolicy: Always
 
 database:
+  createSecret: true  # Simplified configuration: always create Secret
   connectionString: "postgresql://user:password@db-host:5432/mydb"
 
 config:
+  createConfigMap: true  # Simplified configuration: always create ConfigMap
   inline:
     swagger:
       title: "Production API"

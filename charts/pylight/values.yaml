@@ -9,26 +9,26 @@ image:
 
 # Database connection configuration
 # Either provide connectionString inline OR reference existingSecret
-# database:
-#   connectionString: "postgresql://user:password@host:port/database"  # Inline connection string
-#   # OR
-#   existingSecret: "my-db-secret"  # Name of existing Kubernetes Secret
-#   secretKey: "connection-string"  # Key in secret (default: "connection-string")
+database:
+  createSecret: true  # Whether to create Secret (default: true)
+  # connectionString: "postgresql://user:password@host:port/database"  # Inline connection string
+  # existingSecret: "my-db-secret"  # Name of existing Kubernetes Secret (overrides createSecret)
+  # secretKey: "connection-string"  # Key in secret (default: "connection-string")
 
 # API configuration file
 # Either provide inline YAML config OR reference existingConfigMap
-# config:
-#   inline:  # Inline YAML configuration object
-#     database:
-#       url: "postgresql://user:password@host:port/database"
-#     swagger:
-#       title: "Pylight API"
-#       version: "1.0.0"
-#     tables:
-#       - name: "products"
-#   # OR
-#   existingConfigMap: "my-api-config"  # Name of existing Kubernetes ConfigMap
-#   key: "config.yaml"  # Key in ConfigMap (default: "config.yaml")
+config:
+  createConfigMap: true  # Whether to create ConfigMap (default: true)
+  # inline:  # Inline YAML configuration object
+  #   database:
+  #     url: "postgresql://user:password@host:port/database"
+  #   swagger:
+  #     title: "Pylight API"
+  #     version: "1.0.0"
+  #   tables:
+  #     - name: "products"
+  # existingConfigMap: "my-api-config"  # Name of existing Kubernetes ConfigMap (overrides createConfigMap)
+  # key: "config.yaml"  # Key in ConfigMap (default: "config.yaml")
 
 # Number of API pod replicas
 replicaCount: 1

@@ -4,9 +4,11 @@ image:
   tag: "latest"
 
 database:
+  createSecret: true  # Use simplified configuration
   connectionString: "postgresql://postgres:postgres@host.docker.internal:5432/testdb"
 
 config:
+  createConfigMap: true  # Use simplified configuration
   inline:
     swagger:
       title: "Updated Test API"

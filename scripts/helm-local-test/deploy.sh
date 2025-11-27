@@ -72,6 +72,15 @@ main() {
         exit 1
     fi
     
+    # Validate service prerequisites
+    if ! validate_postgres_prerequisite; then
+        log_error "PostgreSQL prerequisite validation failed"
+        exit 1
+    fi
+    
+    # Redis is optional, so we don't fail if it's not available
+    validate_redis_prerequisite || true
+    
     # Validate values file
     if ! validate_yaml_file "$VALUES_FILE"; then
         log_error "Values file validation failed"
@@ -125,11 +134,11 @@ main() {
     else
         log_error "Deployment completed but pods are not ready"
         
+        preserve_logs "$RELEASE_NAME" "$NAMESPACE"
+        
         if [[ "$CLEANUP_ON_FAILURE" == "true" ]]; then
             log_info "Cleaning up failed deployment..."
             helm uninstall "$RELEASE_NAME" -n "$NAMESPACE" 2>/dev/null || true
-        else
-            preserve_logs "$RELEASE_NAME" "$NAMESPACE"
         fi
         
         exit 1

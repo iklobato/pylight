@@ -50,6 +50,91 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Validate PostgreSQL prerequisite
+validate_postgres_prerequisite() {
+    log_info "Validating PostgreSQL availability..."
+    
+    if ! command_exists psql; then
+        log_warn "psql not found, attempting connection test with nc/curl..."
+    fi
+    
+    # Try to connect to PostgreSQL on localhost:5432
+    if command_exists psql; then
+        if PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres -c "SELECT 1;" >/dev/null 2>&1; then
+            log_info "✓ PostgreSQL is accessible at localhost:5432"
+            return 0
+        fi
+    elif command_exists nc; then
+        if nc -z localhost 5432 >/dev/null 2>&1; then
+            log_info "✓ PostgreSQL port 5432 is open on localhost"
+            return 0
+        fi
+    elif command_exists curl; then
+        # PostgreSQL doesn't respond to HTTP, but we can check if port is open
+        if timeout 1 bash -c "echo > /dev/tcp/localhost/5432" 2>/dev/null; then
+            log_info "✓ PostgreSQL port 5432 is open on localhost"
+            return 0
+        fi
+    fi
+    
+    log_error "PostgreSQL is not accessible at localhost:5432"
+    log_error "Please ensure PostgreSQL is running:"
+    log_error "  docker run -d --name psql -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:latest"
+    log_error "  Or start your existing PostgreSQL container"
+    return 1
+}
+
+# Validate Redis prerequisite (optional)
+validate_redis_prerequisite() {
+    log_info "Validating Redis availability (optional)..."
+    
+    # Try to connect to Redis on localhost:6379
+    if command_exists redis-cli; then
+        if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+            log_info "✓ Redis is accessible at localhost:6379"
+            return 0
+        fi
+    elif command_exists nc; then
+        if nc -z localhost 6379 >/dev/null 2>&1; then
+            log_info "✓ Redis port 6379 is open on localhost"
+            return 0
+        fi
+    elif command_exists curl; then
+        if timeout 1 bash -c "echo > /dev/tcp/localhost/6379" 2>/dev/null; then
+            log_info "✓ Redis port 6379 is open on localhost"
+            return 0
+        fi
+    fi
+    
+    log_warn "Redis is not accessible at localhost:6379 (optional - tests will skip Redis checks)"
+    log_warn "To enable Redis testing:"
+    log_warn "  docker run -d --name redis -p 6379:6379 redis:latest"
+    return 0  # Don't fail, Redis is optional
+}
+
+# Validate minikube prerequisite
+validate_minikube_prerequisite() {
+    log_info "Validating minikube status..."
+    
+    if ! command_exists minikube; then
+        log_error "minikube is not installed"
+        log_error "Please install minikube:"
+        log_error "  macOS: brew install minikube"
+        log_error "  Linux: https://minikube.sigs.k8s.io/docs/start/"
+        return 1
+    fi
+    
+    if ! minikube status >/dev/null 2>&1; then
+        log_error "minikube is not running"
+        log_error "Please start minikube:"
+        log_error "  minikube start --driver=docker"
+        return 1
+    fi
+    
+    log_info "✓ minikube is running"
+    return 0
+}
+
 # Validate prerequisites
 validate_prerequisites() {
     log_info "Validating prerequisites..."
@@ -57,14 +142,12 @@ validate_prerequisites() {
     local missing_tools=()
     
     # Check minikube
-    if ! command_exists minikube; then
-        missing_tools+=("minikube")
-    else
-        if ! minikube status >/dev/null 2>&1; then
-            log_error "minikube is not running. Please start minikube first."
-            return 1
-        fi
-        log_debug "✓ minikube is running"
+    if ! validate_minikube_prerequisite; then
+        log_error ""
+        log_error "To fix:"
+        log_error "  1. Install minikube: https://minikube.sigs.k8s.io/docs/start/"
+        log_error "  2. Start minikube: minikube start --driver=docker"
+        return 1
     fi
     
     # Check kubectl
@@ -99,7 +182,21 @@ validate_prerequisites() {
     # Report missing tools
     if [[ ${#missing_tools[@]} -gt 0 ]]; then
         log_error "Missing required tools: ${missing_tools[*]}"
-        log_error "Please install the missing tools and try again."
+        log_error ""
+        log_error "To fix:"
+        for tool in "${missing_tools[@]}"; do
+            case "$tool" in
+                kubectl)
+                    log_error "  - Install kubectl: https://kubernetes.io/docs/tasks/tools/"
+                    ;;
+                helm)
+                    log_error "  - Install Helm: https://helm.sh/docs/intro/install/"
+                    ;;
+                curl)
+                    log_error "  - Install curl: Usually pre-installed, or use package manager"
+                    ;;
+            esac
+        done
         return 1
     fi
     
@@ -190,31 +287,49 @@ get_service_url() {
     echo "${service_name}.${namespace}.svc.cluster.local"
 }
 
-# Preserve pod logs on failure
+# Preserve pod logs, descriptions, and resource state on failure
 preserve_logs() {
     local release_name="$1"
     local namespace="${2:-$DEFAULT_NAMESPACE}"
     local log_dir="${SCRIPT_DIR}/logs"
+    local timestamp
+    timestamp=$(date +%Y%m%d_%H%M%S)
+    local session_dir="${log_dir}/${release_name}_${timestamp}"
     
-    mkdir -p "$log_dir"
+    mkdir -p "$session_dir"
     
-    log_info "Preserving pod logs to $log_dir..."
+    log_info "Preserving diagnostic information to $session_dir..."
     
+    # Save pod logs and descriptions
     local pods
     pods=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=$release_name" \
         -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$pods" ]]; then
         log_warn "No pods found for release: $release_name"
-        return
+    else
+        for pod in $pods; do
+            log_debug "Saving logs for pod: $pod"
+            kubectl logs -n "$namespace" "$pod" > "${session_dir}/${pod}.log" 2>&1 || true
+            kubectl describe pod -n "$namespace" "$pod" > "${session_dir}/${pod}.describe.txt" 2>&1 || true
+        done
     fi
     
-    for pod in $pods; do
-        log_debug "Saving logs for pod: $pod"
-        kubectl logs -n "$namespace" "$pod" > "${log_dir}/${pod}.log" 2>&1 || true
-        kubectl describe pod -n "$namespace" "$pod" > "${log_dir}/${pod}.describe.txt" 2>&1 || true
-    done
+    # Save resource state
+    log_debug "Saving resource state..."
+    kubectl get all -n "$namespace" -l "app.kubernetes.io/instance=$release_name" \
+        -o yaml > "${session_dir}/resources.yaml" 2>&1 || true
+    kubectl get configmap,secret -n "$namespace" -l "app.kubernetes.io/instance=$release_name" \
+        -o yaml > "${session_dir}/config-resources.yaml" 2>&1 || true
+    kubectl get events -n "$namespace" --sort-by='.lastTimestamp' \
+        > "${session_dir}/events.txt" 2>&1 || true
     
-    log_info "Logs preserved in $log_dir"
+    # Save Helm release status
+    log_debug "Saving Helm release status..."
+    helm status "$release_name" -n "$namespace" > "${session_dir}/helm-status.txt" 2>&1 || true
+    helm get values "$release_name" -n "$namespace" > "${session_dir}/helm-values.yaml" 2>&1 || true
+    
+    log_info "Diagnostic information preserved in $session_dir"
+    log_info "Review logs, resource state, and events for troubleshooting"
 }
 

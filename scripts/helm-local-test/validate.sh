@@ -112,13 +112,16 @@ validate_health_endpoint() {
     fi
     
     # Test health endpoint via kubectl exec
-    if kubectl exec -n "$NAMESPACE" "$pod_name" -- \
-        curl -sf http://localhost:8000/health >/dev/null 2>&1; then
-        log_info "✓ Health endpoint responds correctly"
+    local health_response
+    health_response=$(kubectl exec -n "$NAMESPACE" "$pod_name" -- \
+        curl -sf http://localhost:8000/health 2>/dev/null || echo "")
+    
+    if [[ -n "$health_response" ]] && echo "$health_response" | grep -q "healthy\|status"; then
+        log_info "✓ Health endpoint responds correctly: $health_response"
         ((VALIDATION_PASSED++))
         return 0
     else
-        log_error "✗ Health endpoint failed"
+        log_error "✗ Health endpoint failed or returned invalid response"
         preserve_logs "$RELEASE_NAME" "$NAMESPACE"
         ((VALIDATION_FAILED++))
         return 1
@@ -199,11 +202,7 @@ validate_database_connectivity() {
         return 0
     fi
     
-    log_info "Validating database connectivity..."
-    
-    # Database connectivity is validated indirectly through API tests
-    # If API tests pass, database is likely connected
-    # Additional validation: check pod logs for database connection errors
+    log_info "Validating database connectivity from pods..."
     
     local pod_name
     pod_name=$(kubectl get pods -n "$NAMESPACE" -l "app.kubernetes.io/instance=$RELEASE_NAME" \
@@ -213,6 +212,20 @@ validate_database_connectivity() {
         log_warn "⚠ Cannot validate database connectivity (no pods found)"
         ((VALIDATION_WARNINGS++))
         return 0
+    fi
+    
+    # Try to connect to PostgreSQL from the pod
+    # Use host.docker.internal to access host PostgreSQL from minikube pods
+    log_debug "Testing PostgreSQL connection from pod: $pod_name"
+    
+    # Check if pod can reach PostgreSQL (using nc or curl if available in pod)
+    if kubectl exec -n "$NAMESPACE" "$pod_name" -- \
+        sh -c "command -v nc >/dev/null 2>&1 && nc -z host.docker.internal 5432 2>/dev/null || command -v curl >/dev/null 2>&1 && curl -sf --max-time 2 http://host.docker.internal:5432 >/dev/null 2>&1 || timeout 2 bash -c 'echo > /dev/tcp/host.docker.internal/5432' 2>/dev/null || exit 1" 2>/dev/null; then
+        log_info "✓ Pod can reach PostgreSQL at host.docker.internal:5432"
+        ((VALIDATION_PASSED++))
+    else
+        log_warn "⚠ Pod cannot reach PostgreSQL (may be expected if using different connection string)"
+        ((VALIDATION_WARNINGS++))
     fi
     
     # Check for database connection errors in logs
@@ -226,6 +239,41 @@ validate_database_connectivity() {
     else
         log_info "✓ No database connection errors in logs"
         ((VALIDATION_PASSED++))
+    fi
+    
+    return 0
+}
+
+validate_redis_connectivity() {
+    log_info "Validating Redis connectivity from pods (optional)..."
+    
+    # Check if Redis is configured/available
+    if ! validate_redis_prerequisite 2>/dev/null; then
+        log_info "Skipping Redis connectivity test (Redis not available)"
+        return 0
+    fi
+    
+    local pod_name
+    pod_name=$(kubectl get pods -n "$NAMESPACE" -l "app.kubernetes.io/instance=$RELEASE_NAME" \
+        -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    
+    if [[ -z "$pod_name" ]]; then
+        log_warn "⚠ Cannot validate Redis connectivity (no pods found)"
+        ((VALIDATION_WARNINGS++))
+        return 0
+    fi
+    
+    # Try to connect to Redis from the pod
+    log_debug "Testing Redis connection from pod: $pod_name"
+    
+    # Check if pod can reach Redis (using nc or curl if available in pod)
+    if kubectl exec -n "$NAMESPACE" "$pod_name" -- \
+        sh -c "command -v nc >/dev/null 2>&1 && nc -z host.docker.internal 6379 2>/dev/null || command -v curl >/dev/null 2>&1 && curl -sf --max-time 2 http://host.docker.internal:6379 >/dev/null 2>&1 || timeout 2 bash -c 'echo > /dev/tcp/host.docker.internal/6379' 2>/dev/null || exit 1" 2>/dev/null; then
+        log_info "✓ Pod can reach Redis at host.docker.internal:6379"
+        ((VALIDATION_PASSED++))
+    else
+        log_warn "⚠ Pod cannot reach Redis (may be expected if Redis is not configured)"
+        ((VALIDATION_WARNINGS++))
     fi
     
     return 0
@@ -308,6 +356,12 @@ main() {
     # 5. Validate database connectivity
     log_info "=== Database Connectivity Validation ==="
     validate_database_connectivity
+    
+    echo ""
+    
+    # 6. Validate Redis connectivity (optional)
+    log_info "=== Redis Connectivity Validation (Optional) ==="
+    validate_redis_connectivity
     
     echo ""
     

@@ -142,10 +142,41 @@ main() {
         exit 1
     fi
     
-    # Verify service remains available
+    # Verify rolling update behavior - check that old pods are terminated and new ones are ready
+    log_info "Verifying rolling update behavior..."
+    local old_pods
+    old_pods=$(kubectl get pods -n "$NAMESPACE" -l "app.kubernetes.io/instance=$RELEASE_NAME" \
+        -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
+    
+    # Check that all pods are in Ready state (no Terminating pods)
+    local terminating_pods
+    terminating_pods=$(kubectl get pods -n "$NAMESPACE" -l "app.kubernetes.io/instance=$RELEASE_NAME" \
+        -o jsonpath='{.items[?(@.status.phase=="Terminating")].metadata.name}' 2>/dev/null || echo "")
+    
+    if [[ -n "$terminating_pods" ]]; then
+        log_warn "⚠ Some pods are still terminating: $terminating_pods"
+    else
+        log_info "✓ No pods in Terminating state (rolling update completed)"
+    fi
+    
+    # Verify service remains available during and after upgrade
     log_info "Verifying service remains available..."
     if kubectl get svc "$service_name" -n "$NAMESPACE" >/dev/null 2>&1; then
         log_info "✓ Service remains available after upgrade"
+        
+        # Test service endpoint to ensure it's functional
+        local pod_name
+        pod_name=$(kubectl get pods -n "$NAMESPACE" -l "app.kubernetes.io/instance=$RELEASE_NAME" \
+            -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        
+        if [[ -n "$pod_name" ]]; then
+            if kubectl exec -n "$NAMESPACE" "$pod_name" -- \
+                curl -sf http://localhost:8000/health >/dev/null 2>&1; then
+                log_info "✓ Service endpoint is functional after upgrade"
+            else
+                log_warn "⚠ Service endpoint not responding (may need more time)"
+            fi
+        fi
     else
         log_error "✗ Service not available after upgrade"
         exit 1

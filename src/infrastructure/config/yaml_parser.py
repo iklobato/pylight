@@ -237,7 +237,7 @@ class YAMLParser:
                 value: Scalar value string
 
             Returns:
-                Parsed value (string, number, boolean, null)
+                Parsed value (string, number, boolean, null, list, dict)
             """
             value = value.strip()
 
@@ -252,6 +252,14 @@ class YAMLParser:
 
             if value == "false" or value == "False" or value == "FALSE":
                 return False
+
+            # Handle empty list notation: []
+            if value == "[]":
+                return []
+
+            # Handle empty dict notation: {}
+            if value == "{}":
+                return {}
 
             if value.startswith('"') and value.endswith('"'):
                 return value[1:-1].replace('\\"', '"').replace("\\n", "\n").replace("\\t", "\t")

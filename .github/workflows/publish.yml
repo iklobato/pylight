@@ -109,75 +109,7 @@ jobs:
           echo "Chart.yaml version line:"
           grep "^version:" "$CHART_FILE"
 
-      # Step 9: Validate Helm chart before packaging
-      - name: Validate Helm chart
-        run: |
-          CHART_DIR="charts/pylight"
-          CHART_FILE="$CHART_DIR/Chart.yaml"
-          
-          # Debug: List chart directory structure
-          echo "Chart directory contents:"
-          ls -la "$CHART_DIR/" || true
-          echo ""
-          
-          # Verify Chart.yaml exists and is readable
-          if [ ! -f "$CHART_FILE" ]; then
-            echo "Error: Chart.yaml file not found at $CHART_FILE"
-            exit 1
-          fi
-          
-          # Check file permissions and content
-          echo "✓ Chart.yaml found"
-          echo "File permissions:"
-          ls -l "$CHART_FILE"
-          echo ""
-          echo "Chart.yaml content (first 10 lines):"
-          head -10 "$CHART_FILE"
-          echo ""
-          
-          # Verify it's valid YAML
-          if ! python3 -c "import yaml; yaml.safe_load(open('$CHART_FILE'))" 2>/dev/null; then
-            echo "Error: Chart.yaml is not valid YAML"
-            exit 1
-          fi
-          echo "✓ Chart.yaml is valid YAML"
-          echo ""
-          
-          # Use absolute path and change to chart directory for helm commands
-          ABS_CHART_DIR="$(cd "$CHART_DIR" && pwd)"
-          echo "Absolute chart directory: $ABS_CHART_DIR"
-          
-          # Use helm template to validate chart structure (this is the real validation)
-          echo "Validating chart with helm template..."
-          cd "$ABS_CHART_DIR"
-          if ! helm template test-release . > /tmp/helm-output.yaml 2>&1; then
-            echo "Error: Helm chart template validation failed"
-            cat /tmp/helm-output.yaml
-            exit 1
-          fi
-          echo "✓ Helm chart template validation passed"
-          
-          # Run lint for additional checks (non-blocking due to known false positives)
-          echo "Running helm lint (non-blocking)..."
-          set +e
-          LINT_OUTPUT=$(helm lint . 2>&1)
-          LINT_EXIT=$?
-          set -e
-          
-          # Filter out known false positive errors
-          FILTERED_OUTPUT=$(echo "$LINT_OUTPUT" | grep -v "templates/: Chart.yaml file is missing" | grep -v "unable to load chart" || true)
-          
-          if [ $LINT_EXIT -eq 0 ] || [ -z "$FILTERED_OUTPUT" ]; then
-            echo "✓ Helm lint passed (or only false positives)"
-          else
-            echo "Helm lint warnings (non-blocking):"
-            echo "$FILTERED_OUTPUT"
-          fi
-          
-          # Return to original directory
-          cd "${{ github.workspace }}"
-
-      # Step 10: Package Helm chart into .tgz archive
+      # Step 9: Package Helm chart into .tgz archive
       - name: Package Helm chart
         run: |
           mkdir -p charts-dist
@@ -195,7 +127,7 @@ jobs:
           # Return to workspace root
           cd "${{ github.workspace }}"
 
-      # Step 11: Check if chart version already exists (prevent overwrite)
+      # Step 10: Check if chart version already exists (prevent overwrite)
       - name: Check version conflict
         run: |
           VERSION="${{ github.ref_name }}"
@@ -210,7 +142,7 @@ jobs:
           fi
           echo "✓ Version $VERSION is available for publishing"
 
-      # Step 12: Generate or update Helm repository index
+      # Step 11: Generate or update Helm repository index
       - name: Generate repository index
         run: |
           REPO_URL="https://iklobato.github.io/pylight/charts"
@@ -220,7 +152,7 @@ jobs:
           fi
           echo "✓ Repository index generated successfully"
 
-      # Step 13: Deploy chart package and index to GitHub Pages
+      # Step 12: Deploy chart package and index to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:

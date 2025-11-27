@@ -69,7 +69,14 @@ jobs:
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
           helm version
 
-      # Step 7: Update Chart.yaml version to match Git tag
+      # Step 7: Clean up macOS resource fork files (._*) that cause Helm issues
+      - name: Clean up macOS resource forks
+        run: |
+          find charts/pylight -name "._*" -type f -delete || true
+          find charts/pylight -name ".DS_Store" -type f -delete || true
+          echo "✓ Cleaned up macOS resource fork files"
+
+      # Step 8: Update Chart.yaml version to match Git tag
       - name: Update Chart.yaml version
         run: |
           VERSION="${{ github.ref_name }}"
@@ -81,7 +88,7 @@ jobs:
           fi
           echo "✓ Updated Chart.yaml version to $VERSION"
 
-      # Step 8: Validate Helm chart before packaging
+      # Step 9: Validate Helm chart before packaging
       - name: Validate Helm chart
         run: |
           if ! helm lint charts/pylight; then
@@ -90,7 +97,7 @@ jobs:
           fi
           echo "✓ Helm chart validation passed"
 
-      # Step 9: Package Helm chart into .tgz archive
+      # Step 10: Package Helm chart into .tgz archive
       - name: Package Helm chart
         run: |
           mkdir -p charts-dist
@@ -100,7 +107,7 @@ jobs:
           fi
           echo "✓ Helm chart packaged successfully"
 
-      # Step 10: Check if chart version already exists (prevent overwrite)
+      # Step 11: Check if chart version already exists (prevent overwrite)
       - name: Check version conflict
         run: |
           VERSION="${{ github.ref_name }}"
@@ -115,7 +122,7 @@ jobs:
           fi
           echo "✓ Version $VERSION is available for publishing"
 
-      # Step 11: Generate or update Helm repository index
+      # Step 12: Generate or update Helm repository index
       - name: Generate repository index
         run: |
           REPO_URL="https://iklobato.github.io/pylight/charts"
@@ -125,7 +132,7 @@ jobs:
           fi
           echo "✓ Repository index generated successfully"
 
-      # Step 12: Deploy chart package and index to GitHub Pages
+      # Step 13: Deploy chart package and index to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:

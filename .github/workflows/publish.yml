@@ -115,24 +115,35 @@ jobs:
       - name: Validate Helm chart
         run: |
           CHART_DIR="charts/pylight"
-          ABS_CHART_DIR="$(cd "$CHART_DIR" && pwd)"
           
           # Verify Chart.yaml exists
-          if [ ! -f "$ABS_CHART_DIR/Chart.yaml" ]; then
-            echo "Error: Chart.yaml not found at $ABS_CHART_DIR/Chart.yaml"
+          if [ ! -f "$CHART_DIR/Chart.yaml" ]; then
+            echo "Error: Chart.yaml not found at $CHART_DIR/Chart.yaml"
+            ls -la "$CHART_DIR/" || true
+            exit 1
+          fi
+          
+          # Change to chart directory - Helm works best when run from chart root
+          cd "$CHART_DIR"
+          
+          # Verify we're in the right place
+          if [ ! -f "Chart.yaml" ]; then
+            echo "Error: Chart.yaml not found in current directory"
+            pwd
+            ls -la
             exit 1
           fi
           
           # Try helm lint (known to have false positives in Helm 3.14.3, so non-blocking)
           echo "Running helm lint (non-blocking due to known false positives)..."
           set +e
-          helm lint "$ABS_CHART_DIR" 2>&1 | grep -v "templates/: Chart.yaml file is missing" || true
+          helm lint . 2>&1 | grep -v "templates/: Chart.yaml file is missing" | grep -v "unable to load chart" || true
           LINT_EXIT=$?
           set -e
           
           # Primary validation: use helm template (more reliable)
           echo "Running helm template validation..."
-          if ! helm template test-release "$ABS_CHART_DIR" > /tmp/rendered.yaml 2>&1; then
+          if ! helm template test-release . > /tmp/rendered.yaml 2>&1; then
             echo "Error: Helm template validation failed"
             cat /tmp/rendered.yaml
             exit 1
@@ -144,6 +155,9 @@ jobs:
           else
             echo "⚠ Helm lint had issues (known false positive in Helm 3.14.3), but template validation passed"
           fi
+          
+          # Return to workspace root
+          cd "${{ github.workspace }}"
 
       # Step 6.9: Show rendered template preview (already validated in step 6.8)
       - name: Show rendered template preview
@@ -155,9 +169,18 @@ jobs:
       - name: Install and test chart
         run: |
           CHART_DIR="charts/pylight"
-          ABS_CHART_DIR="$(cd "$CHART_DIR" && pwd)"
-          # Install chart with minimal test values using absolute path
-          if ! helm install test-release "$ABS_CHART_DIR" \
+          cd "$CHART_DIR"
+          
+          # Verify Chart.yaml exists
+          if [ ! -f "Chart.yaml" ]; then
+            echo "Error: Chart.yaml not found"
+            pwd
+            ls -la
+            exit 1
+          fi
+          
+          # Install chart with minimal test values
+          if ! helm install test-release . \
             --set image.repository=iklob1/pylight \
             --set image.tag=${{ steps.version.outputs.version }} \
             --set database.connectionString="postgresql://test:test@test:5432/test" \
@@ -171,6 +194,9 @@ jobs:
             exit 1
           fi
           echo "✓ Chart installed successfully"
+          
+          # Return to workspace root
+          cd "${{ github.workspace }}"
 
       # Step 6.11: Smoke test deployment
       - name: Smoke test deployment

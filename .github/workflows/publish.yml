@@ -145,32 +145,31 @@ jobs:
             echo "⚠ Helm lint had issues (known false positive in Helm 3.14.3), but template validation passed"
           fi
 
-      # Step 6.9: Validate Helm chart templates
-      - name: Validate Helm chart (template)
+      # Step 6.9: Show rendered template preview (already validated in step 6.8)
+      - name: Show rendered template preview
         run: |
-          cd charts/pylight
-          helm template test-release . > /tmp/rendered.yaml
-          if [ $? -ne 0 ]; then
-            echo "Error: Helm template validation failed"
-            exit 1
-          fi
-          echo "✓ Helm template validation passed"
           echo "Rendered manifest preview:"
-          head -20 /tmp/rendered.yaml
+          head -30 /tmp/rendered.yaml
 
       # Step 6.10: Install and test chart in kind cluster
       - name: Install and test chart
         run: |
-          cd charts/pylight
-          # Install chart with minimal test values
-          helm install test-release . \
+          CHART_DIR="charts/pylight"
+          ABS_CHART_DIR="$(cd "$CHART_DIR" && pwd)"
+          # Install chart with minimal test values using absolute path
+          if ! helm install test-release "$ABS_CHART_DIR" \
             --set image.repository=iklob1/pylight \
             --set image.tag=${{ steps.version.outputs.version }} \
             --set database.connectionString="postgresql://test:test@test:5432/test" \
             --set config.inline.swagger.title="Test API" \
             --set config.inline.swagger.version="1.0.0" \
             --set config.inline.tables[0].name="test" \
-            --wait --timeout 5m || (echo "Chart installation failed" && kubectl get pods && kubectl describe pods && exit 1)
+            --wait --timeout 5m; then
+            echo "Chart installation failed"
+            kubectl get pods
+            kubectl describe pods
+            exit 1
+          fi
           echo "✓ Chart installed successfully"
 
       # Step 6.11: Smoke test deployment

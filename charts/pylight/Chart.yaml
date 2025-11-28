@@ -18,3 +18,8 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - Initial release of Helm chart for Pylight
+  # Breaking changes format (when needed):
+  # artifacthub.io/breakingChanges: |
+  #   - description: "Description of breaking change"
+  #     impact: "Impact on users"
+  #     migration: "How to migrate"

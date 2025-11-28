@@ -67,3 +67,19 @@ healthCheck:
     initialDelaySeconds: 10
     periodSeconds: 5
 
+# Ingress configuration
+ingress:
+  enabled: false  # Set to true to enable Ingress
+  className: ""  # Optional: specify ingress class name
+  annotations: {}  # Optional: ingress controller annotations
+  hosts:
+    - host: pylight.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []  # Optional: TLS configuration
+  # Example TLS configuration:
+  # - secretName: pylight-tls
+  #   hosts:
+  #     - pylight.example.com
+

@@ -1,5 +1,7 @@
 # Pylight
 
+[![Publish Docker Image and Helm Chart](https://github.com/iklobato/pylight/actions/workflows/publish.yml/badge.svg)](https://github.com/iklobato/pylight/actions/workflows/publish.yml)
+
 A next-generation Python API framework that automatically generates REST endpoints, GraphQL schemas, WebSocket hooks, and CLI commands from data models.
 
 ## Features

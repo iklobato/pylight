@@ -103,6 +103,11 @@ The following table lists the configurable parameters and their default values:
 | `healthCheck.readinessProbe.path` | Readiness probe path | `/health` |
 | `healthCheck.readinessProbe.initialDelaySeconds` | Initial delay | `10` |
 | `healthCheck.readinessProbe.periodSeconds` | Probe period | `5` |
+| `ingress.enabled` | Enable Ingress | `false` |
+| `ingress.className` | Ingress class name | `""` |
+| `ingress.annotations` | Ingress annotations | `{}` |
+| `ingress.hosts` | Ingress hosts | `[{host: pylight.local, paths: [{path: /, pathType: Prefix}]}]` |
+| `ingress.tls` | TLS configuration | `[]` |
 
 ### Simplified Configuration
 
@@ -171,9 +176,39 @@ See the [examples/](examples/) directory for common use cases:
 - `production.yaml` - Production-ready settings with scaling
 - `existing-resources.yaml` - Using existing Secrets and ConfigMaps
 
+## Ingress Configuration
+
+To enable Ingress, set `ingress.enabled: true` and configure your ingress controller:
+
+```yaml
+ingress:
+  enabled: true
+  className: "nginx"  # or "traefik", "istio", etc.
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: api.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: pylight-tls
+      hosts:
+        - api.example.com
+```
+
 ## Upgrading
 
+### Upgrade Process
+
 Update your `values.yaml` and run:
+
+```bash
+helm upgrade my-api iklobato/pylight -f values.yaml
+```
+
+Or if installing from local chart:
 
 ```bash
 helm upgrade my-api ./charts/pylight -f values.yaml
@@ -181,21 +216,61 @@ helm upgrade my-api ./charts/pylight -f values.yaml
 
 The chart uses a RollingUpdate strategy for zero-downtime deployments. Pods are updated one at a time, ensuring service availability throughout the upgrade.
 
-## Scaling
+### Upgrade Notes
 
-To scale the deployment:
+**Version 1.0.10+**
+- Added Ingress support (disabled by default)
+- Enhanced CI/CD testing with kind cluster validation
+- Improved ConfigMap and Secret handling
 
+**Breaking Changes**
+- None in current version
+
+**Migration Guide**
+- If upgrading from a version without Ingress support, no changes required (Ingress is disabled by default)
+- To enable Ingress, add the `ingress` section to your `values.yaml` with `enabled: true`
+
+### Breaking Changes Documentation
+
+Breaking changes are documented in the `Chart.yaml` annotations section using the `artifacthub.io/breakingChanges` annotation. When a breaking change is introduced:
+
+1. **Documentation**: The breaking change is documented in `Chart.yaml` with:
+   - Description of the change
+   - Impact on users
+   - Migration instructions
+
+2. **Version Bumping**: Breaking changes result in a major version bump (e.g., 1.0.0 → 2.0.0)
+
+3. **Upgrade Notes**: Users should review the `Chart.yaml` annotations before upgrading to identify any breaking changes
+
+Example breaking change format in `Chart.yaml`:
 ```yaml
-replicaCount: 3
+annotations:
+  artifacthub.io/breakingChanges: |
+    - description: "Changed default service type from ClusterIP to NodePort"
+      impact: "Existing deployments will need to update their service configuration"
+      migration: "Set service.type: ClusterIP in values.yaml if you want to maintain previous behavior"
 ```
 
-Then upgrade:
+### Preserving Custom Values During Upgrade
 
-```bash
-helm upgrade my-api ./charts/pylight -f values.yaml
-```
+Helm preserves your custom values during upgrades. However, if you want to ensure specific values are maintained:
 
-Kubernetes will automatically load balance traffic across all pod replicas.
+1. **Save your current values:**
+   ```bash
+   helm get values my-api > my-values.yaml
+   ```
+
+2. **Upgrade with saved values:**
+   ```bash
+   helm upgrade my-api iklobato/pylight -f my-values.yaml
+   ```
+
+3. **Verify the upgrade:**
+   ```bash
+   helm status my-api
+   kubectl get pods -l app.kubernetes.io/name=pylight
+   ```
 
 ## Uninstalling
 
@@ -294,7 +369,7 @@ The chart includes a JSON schema for values validation (`values.schema.json`). H
 
 - Documentation: [https://pylight.dev](https://pylight.dev)
 - Issues: [https://github.com/iklobato/pylight/issues](https://github.com/iklobato/pylight/issues)
-- Quick Start Guide: [specs/001-helm-deployment/quickstart.md](../../specs/001-helm-deployment/quickstart.md)
+- Quick Start Guide: [specs/001-helm-chart/quickstart.md](../../specs/001-helm-chart/quickstart.md)
 
 ## License
 

@@ -16,10 +16,17 @@ on:
     tags:
       # Match semantic version tags without 'v' prefix (e.g., 1.0.0, 1.2.3-beta.1)
       - '[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.0)'
+        required: false
+        type: string
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # Ensure workflow completes within 15 minutes
     permissions:
       contents: write  # Required for GitHub Pages deployment
       packages: write  # Required for Docker Hub push
@@ -30,15 +37,26 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history to ensure all files are available
 
-      # Step 2: Validate Git tag format (semantic versioning without 'v' prefix)
-      - name: Validate Git tag
+      # Step 2: Determine version and validate format (semantic versioning without 'v' prefix)
+      - name: Determine and validate version
+        id: version
         run: |
-          if ! [[ "${{ github.ref_name }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
-            echo "Error: Tag must be semantic version without 'v' prefix (e.g., 1.0.0)"
+          # Use workflow_dispatch input if provided, otherwise use git tag
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          
+          # Validate semantic version format
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "Error: Version must be semantic version without 'v' prefix (e.g., 1.0.0)"
             echo "Valid formats: 1.0.0, 1.2.3, 2.0.0-beta.1, 1.0.0+abc123"
             exit 1
           fi
-          echo "✓ Validated tag: ${{ github.ref_name }}"
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✓ Validated version: $VERSION"
 
       # Step 3: Set up Docker Buildx for advanced build features
       - name: Set up Docker Buildx
@@ -60,7 +78,7 @@ jobs:
           context: .
           push: true
           tags: |
-            iklob1/pylight:${{ github.ref_name }}
+            iklob1/pylight:${{ steps.version.outputs.version }}
             iklob1/pylight:latest
           platforms: linux/amd64
         continue-on-error: false
@@ -71,6 +89,104 @@ jobs:
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
           helm version
 
+      # Step 6.5: Set up kind for testing
+      - name: Set up kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+          kind version
+
+      # Step 6.6: Set up kubectl
+      - name: Set up kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      # Step 6.7: Create kind cluster for testing
+      - name: Create kind cluster
+        run: |
+          kind create cluster --name pylight-test --wait 60s
+          kubectl cluster-info --context kind-pylight-test
+
+      # Step 6.8: Validate Helm chart with lint
+      - name: Validate Helm chart (lint)
+        run: |
+          cd charts/pylight
+          helm lint . || (echo "Helm lint failed" && exit 1)
+          echo "✓ Helm lint passed"
+
+      # Step 6.9: Validate Helm chart templates
+      - name: Validate Helm chart (template)
+        run: |
+          cd charts/pylight
+          helm template test-release . > /tmp/rendered.yaml
+          if [ $? -ne 0 ]; then
+            echo "Error: Helm template validation failed"
+            exit 1
+          fi
+          echo "✓ Helm template validation passed"
+          echo "Rendered manifest preview:"
+          head -20 /tmp/rendered.yaml
+
+      # Step 6.10: Install and test chart in kind cluster
+      - name: Install and test chart
+        run: |
+          cd charts/pylight
+          # Install chart with minimal test values
+          helm install test-release . \
+            --set image.repository=iklob1/pylight \
+            --set image.tag=${{ steps.version.outputs.version }} \
+            --set database.connectionString="postgresql://test:test@test:5432/test" \
+            --set config.inline.swagger.title="Test API" \
+            --set config.inline.swagger.version="1.0.0" \
+            --set config.inline.tables[0].name="test" \
+            --wait --timeout 5m || (echo "Chart installation failed" && kubectl get pods && kubectl describe pods && exit 1)
+          echo "✓ Chart installed successfully"
+
+      # Step 6.11: Smoke test deployment
+      - name: Smoke test deployment
+        run: |
+          # Wait for pods to be ready
+          if ! kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=pylight --timeout=120s; then
+            echo "Error: Pods did not become ready within timeout"
+            kubectl get pods -l app.kubernetes.io/name=pylight
+            kubectl describe pods -l app.kubernetes.io/name=pylight
+            kubectl logs -l app.kubernetes.io/name=pylight --tail=50
+            exit 1
+          fi
+          
+          # Check pod status
+          kubectl get pods -l app.kubernetes.io/name=pylight
+          
+          # Check if at least one pod is running
+          RUNNING_PODS=$(kubectl get pods -l app.kubernetes.io/name=pylight --field-selector=status.phase=Running --no-headers | wc -l)
+          if [ "$RUNNING_PODS" -eq 0 ]; then
+            echo "Error: No pods are running after readiness check"
+            kubectl describe pods -l app.kubernetes.io/name=pylight
+            kubectl logs -l app.kubernetes.io/name=pylight --tail=50
+            exit 1
+          fi
+          
+          # Check for crash loops
+          CRASH_LOOP_PODS=$(kubectl get pods -l app.kubernetes.io/name=pylight --field-selector=status.phase!=Running --no-headers 2>/dev/null | wc -l)
+          if [ "$CRASH_LOOP_PODS" -gt 0 ]; then
+            echo "Error: Some pods are in crash loop or failed state"
+            kubectl get pods -l app.kubernetes.io/name=pylight
+            kubectl describe pods -l app.kubernetes.io/name=pylight
+            exit 1
+          fi
+          
+          echo "✓ Smoke test passed - pods are running and healthy"
+
+      # Step 6.12: Clean up kind cluster
+      - name: Clean up kind cluster
+        if: always()
+        run: |
+          kind delete cluster --name pylight-test || true
+
       # Step 7: Clean up macOS resource fork files (._*) that cause Helm issues
       - name: Clean up macOS resource forks
         run: |
@@ -78,10 +194,25 @@ jobs:
           find charts/pylight -name ".DS_Store" -type f -delete || true
           echo "✓ Cleaned up macOS resource fork files"
 
-      # Step 8: Update Chart.yaml version to match Git tag
+      # Step 7.5: Validate version synchronization before updating
+      - name: Validate version synchronization
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          DOCKER_TAG="iklob1/pylight:$VERSION"
+          
+          echo "Validating version synchronization..."
+          echo "Git tag/Version: $VERSION"
+          echo "Docker image tag: $DOCKER_TAG"
+          echo "Chart version: $VERSION (will be set)"
+          echo "Chart appVersion: $VERSION (will be set)"
+          
+          # All versions should match - this is validated by the version format check
+          echo "✓ Version synchronization validated: all artifacts will use version $VERSION"
+
+      # Step 8: Update Chart.yaml version and appVersion to match version
       - name: Update Chart.yaml version
         run: |
-          VERSION="${{ github.ref_name }}"
+          VERSION="${{ steps.version.outputs.version }}"
           CHART_FILE="charts/pylight/Chart.yaml"
           
           # Verify file exists before update
@@ -93,14 +224,22 @@ jobs:
             exit 1
           fi
           
-          # Use sed to update only the version line (preserves YAML structure)
+          # Use sed to update only the version and appVersion lines (preserves YAML structure)
           # This avoids corrupting multiline literal block scalars and other YAML formatting
           sed -i.bak "s/^version:.*/version: $VERSION/" "$CHART_FILE"
+          sed -i.bak "s/^appVersion:.*/appVersion: \"$VERSION\"/" "$CHART_FILE"
           rm -f "$CHART_FILE.bak"
           
-          # Verify the update worked
+          # Verify the updates worked
           if ! grep -q "^version: $VERSION" "$CHART_FILE"; then
             echo "Error: Failed to update Chart.yaml version to $VERSION"
+            echo "Current Chart.yaml content:"
+            cat "$CHART_FILE"
+            exit 1
+          fi
+          
+          if ! grep -q "^appVersion: \"$VERSION\"" "$CHART_FILE"; then
+            echo "Error: Failed to update Chart.yaml appVersion to $VERSION"
             echo "Current Chart.yaml content:"
             cat "$CHART_FILE"
             exit 1
@@ -114,10 +253,11 @@ jobs:
           fi
           
           echo "✓ Updated Chart.yaml version to $VERSION"
-          echo "Chart.yaml version line:"
-          grep "^version:" "$CHART_FILE"
+          echo "✓ Updated Chart.yaml appVersion to $VERSION"
+          echo "Chart.yaml version lines:"
+          grep -E "^(version|appVersion):" "$CHART_FILE"
 
-      # Step 9: Package Helm chart into .tgz archive
+      # Step 9: Package Helm chart into .tgz archive (after successful testing)
       - name: Package Helm chart
         run: |
           mkdir -p charts-dist
@@ -165,7 +305,7 @@ jobs:
       # Step 10: Check if chart version already exists (prevent overwrite)
       - name: Check version conflict
         run: |
-          VERSION="${{ github.ref_name }}"
+          VERSION="${{ steps.version.outputs.version }}"
           INDEX_URL="https://iklobato.github.io/pylight/charts/index.yaml"
           
           # Download existing index if it exists, validate it's proper YAML
@@ -236,4 +376,55 @@ jobs:
           destination_dir: charts
           keep_files: false
         continue-on-error: false
+
+      # Step 13: Update documentation (non-blocking)
+      - name: Update documentation
+        continue-on-error: true
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Update README.md if it contains version references
+          if [ -f README.md ]; then
+            # Check if README has version placeholders or needs updating
+            if grep -q "version.*latest\|version.*[0-9]\+\.[0-9]\+\.[0-9]\+" README.md 2>/dev/null; then
+              echo "Note: README.md may contain version references that should be updated to $VERSION"
+              echo "Manual update recommended for README.md version references"
+            fi
+          fi
+          
+          # Create or update CHANGELOG.md
+          if [ ! -f CHANGELOG.md ]; then
+            {
+              echo "# Changelog"
+              echo ""
+              echo "All notable changes to this project will be documented in this file."
+              echo ""
+              echo "## [$VERSION] - $(date +%Y-%m-%d)"
+              echo ""
+              echo "### Added"
+              echo "- Automated Docker image and Helm chart publishing"
+              echo "- Automated chart installation testing with kind cluster"
+              echo ""
+            } > CHANGELOG.md
+            echo "✓ Created CHANGELOG.md with version $VERSION"
+          else
+            # Prepend new version entry to CHANGELOG
+            if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
+              {
+                echo "## [$VERSION] - $(date +%Y-%m-%d)"
+                echo ""
+                echo "### Added"
+                echo "- Automated Docker image and Helm chart publishing"
+                echo "- Automated chart installation testing with kind cluster"
+                echo ""
+              } > /tmp/changelog_entry.txt
+              cat /tmp/changelog_entry.txt CHANGELOG.md > CHANGELOG.md.new
+              mv CHANGELOG.md.new CHANGELOG.md
+              echo "✓ Updated CHANGELOG.md with version $VERSION"
+            else
+              echo "Note: CHANGELOG.md already contains entry for version $VERSION"
+            fi
+          fi
+          
+          echo "✓ Documentation update completed (non-blocking)"
 

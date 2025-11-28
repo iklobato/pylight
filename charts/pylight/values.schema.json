@@ -229,6 +229,98 @@
           }
         }
       }
+    },
+    "ingress": {
+      "type": "object",
+      "description": "Ingress configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable Ingress",
+          "default": false
+        },
+        "className": {
+          "type": "string",
+          "description": "Ingress class name",
+          "default": ""
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Ingress annotations",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
+        },
+        "hosts": {
+          "type": "array",
+          "description": "Ingress hosts",
+          "items": {
+            "type": "object",
+            "required": ["host"],
+            "properties": {
+              "host": {
+                "type": "string",
+                "description": "Hostname"
+              },
+              "paths": {
+                "type": "array",
+                "description": "Ingress paths",
+                "items": {
+                  "type": "object",
+                  "required": ["path"],
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "description": "Path",
+                      "default": "/"
+                    },
+                    "pathType": {
+                      "type": "string",
+                      "enum": ["Prefix", "Exact", "ImplementationSpecific"],
+                      "description": "Path type",
+                      "default": "Prefix"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": [
+            {
+              "host": "pylight.local",
+              "paths": [
+                {
+                  "path": "/",
+                  "pathType": "Prefix"
+                }
+              ]
+            }
+          ]
+        },
+        "tls": {
+          "type": "array",
+          "description": "TLS configuration",
+          "items": {
+            "type": "object",
+            "required": ["secretName", "hosts"],
+            "properties": {
+              "secretName": {
+                "type": "string",
+                "description": "TLS secret name"
+              },
+              "hosts": {
+                "type": "array",
+                "description": "TLS hosts",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": []
+        }
+      }
     }
   }
 }

@@ -111,59 +111,58 @@ jobs:
           kind create cluster --name pylight-test --wait 60s
           kubectl cluster-info --context kind-pylight-test
 
-      # Step 6.8: Validate Helm chart (non-blocking lint, then template validation)
+      # Step 6.8: Validate Helm chart (skip lint, use template and package validation)
       - name: Validate Helm chart
         run: |
           CHART_DIR="charts/pylight"
           
-          # Verify Chart.yaml exists
+          # Verify Chart.yaml exists and show directory contents
+          echo "Checking chart directory..."
+          ls -la "$CHART_DIR/" || true
+          
           if [ ! -f "$CHART_DIR/Chart.yaml" ]; then
             echo "Error: Chart.yaml not found at $CHART_DIR/Chart.yaml"
-            ls -la "$CHART_DIR/" || true
             exit 1
           fi
           
-          # Change to chart directory - Helm works best when run from chart root
-          cd "$CHART_DIR"
+          echo "✓ Chart.yaml found"
+          cat "$CHART_DIR/Chart.yaml" | head -10
           
-          # Verify we're in the right place
-          if [ ! -f "Chart.yaml" ]; then
-            echo "Error: Chart.yaml not found in current directory"
-            pwd
-            ls -la
-            exit 1
-          fi
-          
-          # Try helm lint (known to have false positives in Helm 3.14.3, so non-blocking)
-          echo "Running helm lint (non-blocking due to known false positives)..."
-          set +e
-          helm lint . 2>&1 | grep -v "templates/: Chart.yaml file is missing" | grep -v "unable to load chart" || true
-          LINT_EXIT=$?
-          set -e
-          
-          # Primary validation: use helm template (more reliable)
+          # Use helm template for validation (more reliable than lint)
           echo "Running helm template validation..."
-          if ! helm template test-release . > /tmp/rendered.yaml 2>&1; then
+          if ! helm template test-release "$CHART_DIR" > /tmp/rendered.yaml 2>&1; then
             echo "Error: Helm template validation failed"
             cat /tmp/rendered.yaml
             exit 1
           fi
           
-          echo "✓ Helm template validation passed (primary validation)"
-          if [ $LINT_EXIT -eq 0 ]; then
-            echo "✓ Helm lint also passed"
-          else
-            echo "⚠ Helm lint had issues (known false positive in Helm 3.14.3), but template validation passed"
+          echo "✓ Helm template validation passed"
+          
+          # Also try helm package as additional validation (creates .tgz)
+          echo "Running helm package validation..."
+          TEMP_PACKAGE_DIR="/tmp/helm-package-$$"
+          mkdir -p "$TEMP_PACKAGE_DIR"
+          
+          if ! helm package "$CHART_DIR" --destination "$TEMP_PACKAGE_DIR" > /tmp/package-output.log 2>&1; then
+            echo "Error: Helm package validation failed"
+            cat /tmp/package-output.log
+            rm -rf "$TEMP_PACKAGE_DIR"
+            exit 1
           fi
           
-          # Return to workspace root
-          cd "${{ github.workspace }}"
+          echo "✓ Helm package validation passed"
+          ls -lh "$TEMP_PACKAGE_DIR"/*.tgz || true
+          
+          # Cleanup temp package
+          rm -rf "$TEMP_PACKAGE_DIR"
+          
+          echo "✓ Chart validation complete (template + package both passed)"
 
-      # Step 6.9: Show rendered template preview (already validated in step 6.8)
+      # Step 6.9: Show rendered template preview
       - name: Show rendered template preview
         run: |
           echo "Rendered manifest preview:"
-          head -30 /tmp/rendered.yaml
+          head -30 /tmp/rendered.yaml || echo "Preview not available"
 
       # Step 6.10: Install and test chart in kind cluster
       - name: Install and test chart

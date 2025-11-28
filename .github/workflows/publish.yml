@@ -111,50 +111,70 @@ jobs:
           kind create cluster --name pylight-test --wait 60s
           kubectl cluster-info --context kind-pylight-test
 
-      # Step 6.8: Validate Helm chart (skip lint, use template and package validation)
+      # Step 6.8: Validate Helm chart (use clean temp copy to avoid Helm path issues)
       - name: Validate Helm chart
         run: |
           CHART_DIR="charts/pylight"
           
-          # Verify Chart.yaml exists and show directory contents
-          echo "Checking chart directory..."
-          ls -la "$CHART_DIR/" || true
-          
+          # Verify Chart.yaml exists
           if [ ! -f "$CHART_DIR/Chart.yaml" ]; then
             echo "Error: Chart.yaml not found at $CHART_DIR/Chart.yaml"
             exit 1
           fi
           
           echo "✓ Chart.yaml found"
-          cat "$CHART_DIR/Chart.yaml" | head -10
           
-          # Use helm template for validation (more reliable than lint)
+          # Create a clean temporary copy of the chart (Helm has issues with certain paths)
+          TEMP_CHART_DIR="/tmp/pylight-chart-validate-$$"
+          mkdir -p "$TEMP_CHART_DIR"
+          
+          # Copy entire chart directory
+          cp -r "$CHART_DIR"/* "$TEMP_CHART_DIR/"
+          
+          # Verify Chart.yaml exists in temp location
+          if [ ! -f "$TEMP_CHART_DIR/Chart.yaml" ]; then
+            echo "Error: Chart.yaml not found in temp chart directory"
+            ls -la "$TEMP_CHART_DIR"
+            rm -rf "$TEMP_CHART_DIR"
+            exit 1
+          fi
+          
+          echo "✓ Created clean chart copy for validation"
+          
+          # Change to temp directory and run helm commands from there
+          cd "$TEMP_CHART_DIR"
+          
+          # Use helm template for validation
           echo "Running helm template validation..."
-          if ! helm template test-release "$CHART_DIR" > /tmp/rendered.yaml 2>&1; then
+          if ! helm template test-release . > /tmp/rendered.yaml 2>&1; then
             echo "Error: Helm template validation failed"
             cat /tmp/rendered.yaml
+            cd "${{ github.workspace }}"
+            rm -rf "$TEMP_CHART_DIR"
             exit 1
           fi
           
           echo "✓ Helm template validation passed"
           
-          # Also try helm package as additional validation (creates .tgz)
+          # Also try helm package as additional validation
           echo "Running helm package validation..."
           TEMP_PACKAGE_DIR="/tmp/helm-package-$$"
           mkdir -p "$TEMP_PACKAGE_DIR"
           
-          if ! helm package "$CHART_DIR" --destination "$TEMP_PACKAGE_DIR" > /tmp/package-output.log 2>&1; then
+          if ! helm package . --destination "$TEMP_PACKAGE_DIR" > /tmp/package-output.log 2>&1; then
             echo "Error: Helm package validation failed"
             cat /tmp/package-output.log
-            rm -rf "$TEMP_PACKAGE_DIR"
+            cd "${{ github.workspace }}"
+            rm -rf "$TEMP_CHART_DIR" "$TEMP_PACKAGE_DIR"
             exit 1
           fi
           
           echo "✓ Helm package validation passed"
           ls -lh "$TEMP_PACKAGE_DIR"/*.tgz || true
           
-          # Cleanup temp package
-          rm -rf "$TEMP_PACKAGE_DIR"
+          # Cleanup
+          cd "${{ github.workspace }}"
+          rm -rf "$TEMP_CHART_DIR" "$TEMP_PACKAGE_DIR"
           
           echo "✓ Chart validation complete (template + package both passed)"
 
@@ -175,8 +195,16 @@ jobs:
             exit 1
           fi
           
-          # Install chart with minimal test values using chart path
-          if ! helm install test-release "$CHART_DIR" \
+          # Create a clean temporary copy for installation (Helm path workaround)
+          TEMP_CHART_DIR="/tmp/pylight-chart-install-$$"
+          mkdir -p "$TEMP_CHART_DIR"
+          cp -r "$CHART_DIR"/* "$TEMP_CHART_DIR/"
+          
+          # Change to temp directory and install from there
+          cd "$TEMP_CHART_DIR"
+          
+          # Install chart with minimal test values
+          if ! helm install test-release . \
             --set image.repository=iklob1/pylight \
             --set image.tag=${{ steps.version.outputs.version }} \
             --set database.connectionString="postgresql://test:test@test:5432/test" \
@@ -187,9 +215,16 @@ jobs:
             echo "Chart installation failed"
             kubectl get pods
             kubectl describe pods
+            cd "${{ github.workspace }}"
+            rm -rf "$TEMP_CHART_DIR"
             exit 1
           fi
+          
           echo "✓ Chart installed successfully"
+          
+          # Cleanup
+          cd "${{ github.workspace }}"
+          rm -rf "$TEMP_CHART_DIR"
 
       # Step 6.11: Smoke test deployment
       - name: Smoke test deployment

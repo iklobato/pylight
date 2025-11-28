@@ -49,6 +49,24 @@ helm install my-api iklobato/pylight -f values.yaml
 
 See the [Helm Chart documentation](charts/pylight/README.md) for detailed configuration options.
 
+### Local Development with Minikube
+
+For local testing and development, you can deploy Pylight to a minikube cluster:
+
+```bash
+# Start minikube
+minikube start
+
+# Deploy PostgreSQL to minikube
+kubectl create namespace postgres
+kubectl apply -f <postgres-manifest.yaml>
+
+# Install Pylight using Helm
+helm install pylight-local ./charts/pylight -f local-values.yaml
+```
+
+See the [Helm Chart documentation](charts/pylight/README.md#local-development) for detailed instructions including in-cluster database setup.
+
 ## Quick Example
 
 ```python

@@ -156,6 +156,25 @@ COPY . .
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
+## Kubernetes Deployment
+
+Pylight can be deployed to Kubernetes using the provided Helm chart. See the [Helm Chart documentation](../../charts/pylight/README.md) for complete instructions.
+
+### Quick Start
+
+```bash
+# Add Helm repository
+helm repo add iklobato https://iklobato.github.io/pylight/charts
+helm repo update
+
+# Install
+helm install my-api iklobato/pylight -f values.yaml
+```
+
+### Local Development
+
+For local testing with minikube, see the [Local Development guide](../../charts/pylight/README.md#local-development) in the Helm chart documentation.
+
 ## Best Practices
 
 1. **Use Environment Variables**: Never hardcode secrets

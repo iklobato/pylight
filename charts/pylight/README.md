@@ -54,6 +54,182 @@ Alternatively, install directly from the chart directory:
 helm install my-api ./charts/pylight -f values.yaml
 ```
 
+## Local Development
+
+### Deploying to Minikube with In-Cluster PostgreSQL
+
+For local testing, you can deploy both Pylight and PostgreSQL to your minikube cluster.
+
+#### Step 1: Start Minikube
+
+```bash
+minikube start
+```
+
+#### Step 2: Deploy PostgreSQL
+
+Create a PostgreSQL deployment in the cluster:
+
+```bash
+kubectl create namespace postgres
+```
+
+Apply the PostgreSQL manifest:
+
+```yaml
+# postgres-deployment.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: postgres
+data:
+  POSTGRES_DB: pylight
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        envFrom:
+        - configMapRef:
+            name: postgres-config
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+```
+
+```bash
+kubectl apply -f postgres-deployment.yaml
+kubectl wait --for=condition=ready pod -l app=postgres -n postgres --timeout=120s
+```
+
+#### Step 3: Create Database Table (Optional)
+
+If your application requires specific tables, create them:
+
+```bash
+kubectl exec -n postgres -it $(kubectl get pod -n postgres -l app=postgres -o jsonpath='{.items[0].metadata.name}') -- \
+  psql -U postgres -d pylight -c "CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name VARCHAR(255), price DECIMAL(10,2));"
+```
+
+#### Step 4: Deploy Pylight
+
+Create a `local-values.yaml` file:
+
+```yaml
+image:
+  repository: iklob1/pylight
+  tag: "1.0.21"
+  pullPolicy: IfNotPresent
+
+database:
+  connectionString: "postgresql://postgres:postgres@postgres.postgres.svc.cluster.local:5432/pylight"
+
+config:
+  createConfigMap: true
+  inline:
+    swagger:
+      title: "Pylight API"
+      version: "1.0.21"
+    tables:
+      - name: "products"
+```
+
+**Important**: Use the full Kubernetes service DNS name `postgres.postgres.svc.cluster.local:5432` for in-cluster database connections.
+
+Install the chart:
+
+```bash
+helm install pylight-local ./charts/pylight -f local-values.yaml -n pylight --create-namespace
+```
+
+#### Step 5: Access the API
+
+**Option 1: Port Forward (Recommended)**
+
+```bash
+kubectl port-forward -n pylight svc/pylight-local-service 8000:8000
+```
+
+Then visit: http://localhost:8000/docs
+
+**Option 2: Minikube Service**
+
+```bash
+minikube service pylight-local-service -n pylight
+```
+
+#### Cleanup
+
+```bash
+# Remove Pylight
+helm uninstall pylight-local -n pylight
+
+# Remove PostgreSQL
+kubectl delete namespace postgres
+```
+
+### Troubleshooting Local Deployment
+
+**Pod in CrashLoopBackOff**: Usually indicates database connection issues. Verify:
+- PostgreSQL pod is running: `kubectl get pods -n postgres`
+- Database connection string uses correct service DNS: `postgres.postgres.svc.cluster.local:5432`
+- Database and tables exist
+
+**Connection refused**: Ensure PostgreSQL service is accessible:
+```bash
+kubectl get svc -n postgres
+kubectl run -it --rm debug --image=postgres:15 --restart=Never -- \
+  psql "postgresql://postgres:postgres@postgres.postgres.svc.cluster.local:5432/pylight"
+```
+
 ### Using Existing Kubernetes Resources
 
 If you already have a Secret and ConfigMap:

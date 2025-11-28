@@ -66,4 +66,4 @@ dmypy.json
 specs/
 *.pyc
 specify/
-.cursor/
+.cursor/*

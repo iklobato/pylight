@@ -42,7 +42,11 @@ class DefaultPaginator(Paginator):
 
         offset = (page - 1) * limit
 
-        countQuery = select(func.count()).select_from(model)
+        # Count should use the same filtered query, not just the model
+        # Create a count query from the filtered query by wrapping it in a subquery
+        from sqlalchemy import func
+        # Use the query as a subquery for counting (this preserves WHERE clauses but removes ORDER BY, LIMIT, OFFSET)
+        countQuery = select(func.count()).select_from(query.subquery())
         countResult = await session.execute(countQuery)
         total = countResult.scalar() or 0
 

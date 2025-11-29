@@ -33,10 +33,23 @@ async def handleError(request: Request, exc: Exception) -> Response:
         )
 
     if isinstance(exc, ValidationError):
-        return JSONResponse(
-            {"error": "Validation failed", "detail": str(exc), "status_code": 400},
-            status_code=400,
-        )
+        # Check if ValidationError has field-level errors
+        if hasattr(exc, 'field_errors') and exc.field_errors:
+            # Return structured field-level error format
+            return JSONResponse(
+                {
+                    "error": "Validation failed",
+                    "errors": exc.field_errors,
+                    "status_code": 400
+                },
+                status_code=400,
+            )
+        else:
+            # Single error message (backward compatibility)
+            return JSONResponse(
+                {"error": "Validation failed", "detail": str(exc), "status_code": 400},
+                status_code=400,
+            )
 
     if isinstance(exc, AuthenticationError):
         return JSONResponse(

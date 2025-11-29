@@ -2,15 +2,88 @@
 
 from typing import Any, Optional, Type
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.responses import Response
 from sqlalchemy import select
-from sqlalchemy.exc import NoResultFound, OperationalError
+from sqlalchemy.exc import NoResultFound, OperationalError, IntegrityError
 
 from src.domain.entities.rest_endpoint import RestEndpoint
+from src.domain.errors import ValidationError, DatabaseError, NotFoundError, AuthenticationError, AuthorizationError
 from src.infrastructure.database.connection import DatabaseManager
 from src.presentation.middleware.auth import AuthenticationMiddleware
 from src.presentation.middleware.cache import CacheMiddleware
 from src.presentation.websocket.handler import getWebSocketManager
+
+
+def _validate_id(id_str: str) -> int:
+    """Validate and convert ID string to integer."""
+    try:
+        return int(id_str)
+    except (ValueError, TypeError):
+        raise ValidationError("Invalid ID format")
+
+
+async def _check_authentication(
+    request: Request,
+    model: Type[RestEndpoint],
+    method: str
+) -> None:
+    """Check authentication and raise if unauthorized."""
+    config = model.getConfiguration()
+    if not config.authentication_class:
+        return
+
+    required_roles = config.required_roles.get(method, [])
+    auth_middleware = AuthenticationMiddleware(config.authentication_class, required_roles)
+    auth_response = await auth_middleware.process(request)
+    if auth_response:
+        status_code = auth_response.status_code
+        if status_code == 401:
+            raise AuthenticationError("Authentication required")
+        if status_code == 403:
+            raise AuthorizationError("Authorization failed")
+        raise AuthenticationError("Authentication failed")
+
+
+async def _get_instance_by_id(
+    session: Any,
+    model: Type[RestEndpoint],
+    instance_id: int
+) -> RestEndpoint:
+    """Get instance by ID from database."""
+    result = await session.execute(
+        select(model).where(model.id == instance_id)
+    )
+    instance = result.scalar_one_or_none()
+    if instance is None:
+        raise NotFoundError(f"{model.__name__} not found")
+    return instance
+
+
+async def _delete_instance(
+    session: Any,
+    instance: RestEndpoint
+) -> None:
+    """Delete instance from database."""
+    await session.delete(instance)
+    await session.commit()
+
+
+async def _handle_side_effects(
+    model: Type[RestEndpoint],
+    instance_id: int,
+    operation: str
+) -> None:
+    """Handle cache invalidation and WebSocket broadcasting."""
+    table_name = model.getTableName()
+    deleted_data = {"id": instance_id}
+
+    config = model.getConfiguration()
+    if config.caching_class:
+        cache_middleware = CacheMiddleware(config.caching_class)
+        await cache_middleware.invalidateCache(table_name, str(instance_id))
+
+    websocket_manager = getWebSocketManager()
+    await websocket_manager.broadcast(table_name, operation, deleted_data)
 
 
 def deleteHandler(model: Type[RestEndpoint], databaseManager: Optional[DatabaseManager] = None) -> Any:
@@ -27,73 +100,18 @@ def deleteHandler(model: Type[RestEndpoint], databaseManager: Optional[DatabaseM
     async def handler(request: Request) -> Response:
         """Handle DELETE requests."""
         if databaseManager is None:
-            return JSONResponse(
-                {"error": "Database not configured"}, status_code=500
-            )
+            raise DatabaseError("Database not configured")
 
-        config = model.getConfiguration()
-        if config.authentication_class:
-            requiredRoles = config.required_roles.get("DELETE", [])
-            authMiddleware = AuthenticationMiddleware(config.authentication_class, requiredRoles)
-            authResponse = await authMiddleware.process(request)
-            if authResponse:
-                return authResponse
+        await _check_authentication(request, model, "DELETE")
 
-        try:
-            modelId = int(request.path_params.get("id", 0))
-        except (ValueError, TypeError):
-            return JSONResponse(
-                {"error": "Invalid ID format"}, status_code=400
-            )
+        model_id = _validate_id(request.path_params.get("id", "0"))
 
-        try:
-            async with databaseManager.sessionContext() as session:
-                result = await session.execute(
-                    select(model).where(model.id == modelId)
-                )
-                instance = result.scalar_one_or_none()
+        async with databaseManager.sessionContext() as session:
+            instance = await _get_instance_by_id(session, model, model_id)
+            await _delete_instance(session, instance)
 
-                if instance is None:
-                    return JSONResponse(
-                        {"error": f"{model.__name__} not found"},
-                        status_code=404
-                    )
+        await _handle_side_effects(model, instance.id, "delete")
 
-                tableName = model.getTableName()
-                deletedData = {"id": instance.id}
-
-                await session.delete(instance)
-                await session.commit()
-
-                config = model.getConfiguration()
-                if config.caching_class:
-                    cacheMiddleware = CacheMiddleware(config.caching_class)
-                    await cacheMiddleware.invalidateCache(tableName, str(modelId))
-
-                websocketManager = getWebSocketManager()
-                await websocketManager.broadcast(tableName, "delete", deletedData)
-
-                return Response(status_code=204)
-
-        except NoResultFound:
-            return JSONResponse(
-                {"error": f"{model.__name__} not found"},
-                status_code=404
-            )
-        except OperationalError as e:
-            if 'session' in locals():
-                await session.rollback()
-            return JSONResponse(
-                {"error": "Database connection error", "detail": str(e)},
-                status_code=500
-            )
-        except Exception as e:
-            if 'session' in locals():
-                await session.rollback()
-            return JSONResponse(
-                {"error": "Database operation failed", "detail": str(e)},
-                status_code=500
-            )
+        return Response(status_code=204)
 
     return handler
-

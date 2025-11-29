@@ -36,14 +36,50 @@ async def resolveMutation(
                 inputData = kwargs.get("input", {})
                 inspector = inspect(model)
 
+                # Exclude id and timestamp fields (same as POST handler)
+                excluded_fields = {"id", "created_at", "updated_at"}
+                requiredFields = [
+                    col.name for col in inspector.columns
+                    if not col.nullable 
+                    and col.name not in excluded_fields
+                    and col.default is None
+                    and col.server_default is None
+                ]
+
+                # Validate required fields (but allow optional fields to be missing)
+                missingFields = [field for field in requiredFields if field not in inputData]
+                if missingFields:
+                    # Return error but don't fail the mutation - let the database handle defaults
+                    # Some fields like is_active might have defaults
+                    # Only fail if truly required fields are missing
+                    criticalFields = [f for f in missingFields if f not in ["is_active", "created_at", "updated_at"]]
+                    if criticalFields:
+                        return {"error": f"Missing required fields: {', '.join(criticalFields)}"}
+
                 instanceData = {}
                 for column in inspector.columns:
                     columnName = column.name
+                    # Skip excluded fields (id and timestamp fields with server defaults)
+                    if columnName in excluded_fields:
+                        continue
                     if columnName in inputData:
                         instanceData[columnName] = inputData[columnName]
+                    elif not column.nullable and column.default is None and column.server_default is None:
+                        # Provide defaults for required fields without defaults
+                        typeStr = str(column.type).lower()
+                        if "bool" in typeStr or "boolean" in typeStr:
+                            instanceData[columnName] = True  # Default boolean to True
+                        elif "int" in typeStr or "integer" in typeStr:
+                            instanceData[columnName] = 0  # Default integer to 0
+                        elif "varchar" in typeStr or "text" in typeStr or "string" in typeStr:
+                            instanceData[columnName] = ""  # Default string to empty
 
-                instance = model(**instanceData)
-                session.add(instance)
+                # Use insert().values() to exclude columns with server defaults (same as POST handler)
+                from sqlalchemy import insert
+                insertData = {k: v for k, v in instanceData.items() if k not in excluded_fields}
+                stmt = insert(model).values(**insertData).returning(model)
+                result = await session.execute(stmt)
+                instance = result.scalar_one()
                 await session.commit()
                 await session.refresh(instance)
 

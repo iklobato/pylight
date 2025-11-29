@@ -34,7 +34,7 @@ def startCommand(config: str, host: str, port: int) -> None:
     try:
         click.echo(f"Loading configuration from: {yamlPath}")
         app = LightApi.fromYamlConfig(yamlPath)
-        click.echo(f"✓ Configuration loaded successfully")
+        click.echo("✓ Configuration loaded successfully")
         click.echo(f"✓ Registered {len(app.registeredModels)} table(s)")
         click.echo(f"Starting server on http://{host}:{port}")
         click.echo(f"API documentation: http://{host}:{port}/docs")
@@ -48,4 +48,3 @@ def startCommand(config: str, host: str, port: int) -> None:
     except Exception as e:
         click.echo(f"Error starting server: {e}", err=True)
         raise click.Abort()
-

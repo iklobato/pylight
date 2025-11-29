@@ -1,0 +1,58 @@
+# Example YAML configuration for external database testing
+database:
+  url: "postgresql://postgres:postgres@localhost:5432/pylight_test"
+
+swagger:
+  title: "Pylight Test API"
+  version: "1.0.0"
+  description: "Test API for external database integration"
+
+tables:
+  - name: "users"
+  - name: "categories"
+  - name: "products"
+  - name: "addresses"
+  - name: "orders"
+  - name: "order_items"
+  - name: "reviews"
+  - name: "payments"
+  - name: "shipments"
+  - name: "inventory"
+
+features:
+  pagination:
+    enabled: true
+    default_limit: 10
+    max_limit: 100
+  
+  filtering:
+    enabled: true
+    operators:
+      - "__eq"
+      - "__ne"
+      - "__gt"
+      - "__gte"
+      - "__lt"
+      - "__lte"
+      - "__like"
+      - "__in"
+  
+  sorting:
+    enabled: true
+    default_sort: "id"
+    allowed_fields:
+      - "id"
+      - "name"
+      - "price"
+      - "created_at"
+  
+  graphql:
+    enabled: true
+  
+  websocket:
+    enabled: true
+
+logging:
+  level: "INFO"
+  format: "json"
+

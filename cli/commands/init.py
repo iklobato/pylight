@@ -1,6 +1,5 @@
 """CLI init command to scaffold new projects."""
 
-import os
 import shutil
 from pathlib import Path
 from cli import click_compat as click

@@ -43,9 +43,9 @@ class CacheMiddleware(Middleware):
         if resourceId:
             return f"{modelName}:{resourceId}"
         else:
+            # Include sort, page, and limit in cache key since different sorts/pages should have different cache entries
             filterParams = "&".join(
-                f"{k}={v}" for k, v in request.query_params.items()
-                if k not in ["page", "limit", "sort"]
+                f"{k}={v}" for k, v in sorted(request.query_params.items())
             )
             return f"{modelName}:list:{filterParams}" if filterParams else f"{modelName}:list"
 

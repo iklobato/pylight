@@ -49,6 +49,24 @@ helm install my-api iklobato/pylight -f values.yaml
 
 See the [Helm Chart documentation](charts/pylight/README.md) for detailed configuration options.
 
+### Populate Test Database
+
+Populate a PostgreSQL database with realistic test data for comprehensive Pylight feature testing:
+
+```bash
+# Create schema and populate with default data (1000 records per table)
+pylight populate-test-database --create-schema
+
+# With custom options
+pylight populate-test-database \
+  --create-schema \
+  --seed 42 \
+  --records-per-table 1000 \
+  --table-counts '{"users": 2000, "products": 5000}'
+```
+
+See the [quick start guide](specs/001-populate-test-database/quickstart.md) for detailed usage instructions.
+
 ### Local Development with Minikube
 
 For local testing and development, you can deploy Pylight to a minikube cluster:

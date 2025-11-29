@@ -67,3 +67,4 @@ specs/
 *.pyc
 specify/
 .cursor/*
+**/.cursor

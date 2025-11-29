@@ -19,6 +19,13 @@ Auto-generated from all feature plans. Last updated: 2025-11-21
 - External database (PostgreSQL, MySQL, or SQLite) - provided by user, not deployed by char (001-helm-deployment)
 - Bash (shell scripts), YAML (Helm templates), Python 3.11 (integration tests) + Helm 3.0+, kubectl, minikube, Docker, PostgreSQL (Docker image), Redis (Docker image) (001-simplify-helm-testing)
 - N/A (testing infrastructure uses ephemeral Kubernetes resources) (001-simplify-helm-testing)
+- YAML (Helm templates), Bash (CI/CD scripts), Python 3.11+ (Pylight application) + Helm 3.0+, Kubernetes 1.20+, Docker, GitHub Actions, kind/minikube (for testing) (001-helm-chart)
+- N/A (chart configuration only; database is external) (001-helm-chart)
+- YAML (GitHub Actions workflows), Shell scripting, Python 3.x (for any automation scripts) + GitHub Actions, Docker, Helm 3.x, kind (Kubernetes in Docker), kubectl (001-automated-publish)
+- GitHub Pages (gh-pages branch) for Helm chart repository, Docker Hub for container images (001-automated-publish)
+- Python 3.11+ + Starlette (ASGI framework), SQLAlchemy 2.0+ (ORM), asyncpg/psycopg2-binary (PostgreSQL drivers), strawberry-graphql (GraphQL), pytest (testing), requests (HTTP client for tests) (001-fix-external-db-tests)
+- PostgreSQL (external test database: pylight_test with 1000+ records per table) (001-fix-external-db-tests)
+- PostgreSQL 15+ (dockerized) (001-populate-test-database)
 
 - Python 3.11+ + FastAPI, SQLAlchemy, Strawberry GraphQL, WebSockets, PyJWT, python-jose, redis-py, PyYAML, Alembic, Click (001-pylight-framework)
 
@@ -38,9 +45,9 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3.11+: Follow standard conventions
 
 ## Recent Changes
-- 001-simplify-helm-testing: Added Bash (shell scripts), YAML (Helm templates), Python 3.11 (integration tests) + Helm 3.0+, kubectl, minikube, Docker, PostgreSQL (Docker image), Redis (Docker image)
-- 001-helm-deployment: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
-- 001-helm-deployment: Added Python 3.11+
+- 001-populate-test-database: Added Python 3.11+
+- 001-fix-external-db-tests: Added Python 3.11+ + Starlette (ASGI framework), SQLAlchemy 2.0+ (ORM), asyncpg/psycopg2-binary (PostgreSQL drivers), strawberry-graphql (GraphQL), pytest (testing), requests (HTTP client for tests)
+- 001-external-database-test: Added Python 3.11+
 
 
 <!-- MANUAL ADDITIONS START -->

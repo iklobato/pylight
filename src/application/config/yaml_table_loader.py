@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Type
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, ForeignKey
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.orm import DeclarativeBase
 
 from src.domain.entities.rest_endpoint import RestEndpoint
@@ -130,6 +131,11 @@ class YAMLTableConfigLoader:
             return Boolean
         elif "float" in typeStr or "decimal" in typeStr or "numeric" in typeStr:
             return Float
+        elif "json" in typeStr:
+            # Use JSONB for better performance, JSON as fallback
+            if "jsonb" in typeStr:
+                return JSONB
+            return JSON
         else:
             return String
 
@@ -174,12 +180,21 @@ class YAMLTableConfigLoader:
                 colType = self._mapColumnType(col["type"])
                 nullable = col.get("nullable", True)
                 primaryKey = colName in tableInfo["primary_key"].get("constrained_columns", [])
+                serverDefault = col.get("server_default")
 
                 colKwargs = {}
                 if not nullable:
                     colKwargs["nullable"] = False
                 if primaryKey:
                     colKwargs["primary_key"] = True
+                # Set server_default if it exists (for timestamp columns with now() default)
+                if serverDefault:
+                    from sqlalchemy import text
+                    # server_default comes as a string like "now()" or a FetchedValue
+                    if isinstance(serverDefault, str):
+                        colKwargs["server_default"] = text(serverDefault)
+                    else:
+                        colKwargs["server_default"] = serverDefault
 
                 if "varchar" in str(col["type"]).lower() or "char" in str(col["type"]).lower():
                     length = col.get("type").length if hasattr(col.get("type"), "length") else None

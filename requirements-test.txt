@@ -1,0 +1,30 @@
+# Test dependencies for external database integration testing
+
+# Testing framework
+pytest>=7.4.0
+pytest-html>=3.2.0
+pytest-json-report>=1.5.0
+pytest-cov>=4.1.0
+
+# Test data generation
+faker>=19.0.0
+
+# HTTP client for API testing
+requests>=2.31.0
+
+# WebSocket client for WebSocket testing
+websocket-client>=1.6.0
+
+# Database access
+psycopg2-binary>=2.9.9
+# Alternative: asyncpg>=0.29.0  # Uncomment if using async database access
+
+# Kubernetes client for Helm/Kubernetes testing
+kubernetes>=28.1.0
+
+# YAML parsing (if needed for test configuration)
+pyyaml>=6.0.1
+
+# Utilities
+python-dotenv>=1.0.0
+

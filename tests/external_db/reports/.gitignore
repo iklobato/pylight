@@ -1,0 +1,8 @@
+# Test reports (generated)
+*.xml
+*.html
+*.json
+test-report-*
+!test-report-latest.*
+.DS_Store
+

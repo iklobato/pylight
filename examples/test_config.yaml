@@ -1,0 +1,13 @@
+database:
+  url: "postgresql://postgres:postgres@localhost:5432/pylight"
+
+swagger:
+  title: "Test API"
+  version: "1.0.0"
+  description: "Test API for configuration validation"
+
+cors:
+  allowed_origins: ["*"]
+  allowed_methods: ["GET", "POST", "PUT", "DELETE"]
+  allowed_headers: ["*"]
+

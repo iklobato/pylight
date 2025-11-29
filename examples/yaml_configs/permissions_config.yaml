@@ -1,0 +1,81 @@
+# Permissions and Role-Based Access Control Example
+# This example demonstrates how to configure fine-grained permissions per HTTP method
+
+database:
+  url: "postgresql://postgres:postgres@localhost:5432/pylight"
+
+swagger:
+  title: "Pylight API with Role-Based Access Control"
+  version: "1.0.0"
+  description: "API with detailed permissions configuration per table and method"
+
+# Global authentication configuration
+authentication:
+  jwt:
+    secret_key: "your-secret-key-change-in-production"
+
+tables:
+  # Admin-only table: only admins can access
+  - name: "admin_settings"
+    authentication:
+      required: true
+      # Table-level roles (applies if method-specific roles not specified)
+      roles: ["admin"]
+    
+    # Method-specific permissions override table-level roles
+    permissions:
+      # All methods require admin role
+      GET: ["admin"]
+      POST: ["admin"]
+      PUT: ["admin"]
+      DELETE: ["admin"]
+    
+    # Only GET and POST methods enabled
+    methods: ["GET", "POST"]
+    
+    features:
+      caching:
+        enabled: true
+      pagination:
+        enabled: true
+
+  # User-accessible table: different permissions per method
+  - name: "orders"
+    authentication:
+      required: true
+      # Default roles for table (used if method not specified in permissions)
+      roles: ["user", "admin"]
+    
+    permissions:
+      # GET: any authenticated user (empty list = any authenticated user)
+      GET: []
+      # POST: users and admins can create orders
+      POST: ["user", "admin"]
+      # PUT: users can update their own orders, admins can update any
+      PUT: ["user", "admin"]
+      # DELETE: only admins can delete orders
+      DELETE: ["admin"]
+    
+    features:
+      pagination:
+        enabled: true
+        default_page_size: 20
+      filtering:
+        enabled: true
+      sorting:
+        enabled: true
+
+  # Public table: no authentication required
+  - name: "public_data"
+    authentication:
+      required: false  # Public access, no authentication needed
+    
+    # Only GET method enabled (read-only public data)
+    methods: ["GET"]
+    
+    features:
+      caching:
+        enabled: true
+      pagination:
+        enabled: true
+

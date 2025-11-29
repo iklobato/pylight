@@ -1,0 +1,24 @@
+# Example YAML configuration for Pylight with populated test database
+# This configuration can be used with Pylight after running:
+# pylight populate-test-database --create-schema
+
+database:
+  url: "postgresql://postgres:postgres@localhost:5432/pylight_test"
+
+swagger:
+  title: "Pylight Test API"
+  version: "1.0.0"
+  description: "API for testing Pylight features with realistic e-commerce data"
+
+tables:
+  - name: "users"
+  - name: "categories"
+  - name: "products"
+  - name: "addresses"
+  - name: "orders"
+  - name: "order_items"
+  - name: "reviews"
+  - name: "payments"
+  - name: "shipments"
+  - name: "inventory"
+
